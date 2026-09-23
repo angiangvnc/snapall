@@ -35,6 +35,7 @@ export default async function handler(req, res) {
       if (data && data.code === 0 && data.data) {
         const item = data.data;
         const author = item.author?.nickname || item.author?.unique_id || 'TikTok Creator';
+        const title = item.title ? item.title.trim() : `Video TikTok của @${author}`;
         const videoUrl = item.hdplay || item.play;
         const audioUrl = item.music || '';
         const labels = ['🎬 Tải Video HD (Không logo)'];
