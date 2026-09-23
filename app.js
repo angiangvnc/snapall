@@ -125,8 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.video_hd || data.video) {
             const videoUrl = data.video_hd || data.video;
             btnDownloadHd.href = isHttp 
-                ? `api.php?action=download&filename=${data.platform}_hd.mp4&url=${encodeURIComponent(videoUrl)}` 
+                ? `/api/download?filename=${data.platform}_video_hd.mp4&url=${encodeURIComponent(videoUrl)}` 
                 : videoUrl;
+            btnDownloadHd.setAttribute('download', `${data.platform}_video_hd.mp4`);
             btnDownloadHd.style.display = 'inline-flex';
         } else {
             btnDownloadHd.style.display = 'none';
@@ -135,8 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Setup nút tải SD
         if (data.video_sd && data.video_sd !== data.video_hd) {
             btnDownloadSd.href = isHttp 
-                ? `api.php?action=download&filename=${data.platform}_sd.mp4&url=${encodeURIComponent(data.video_sd)}` 
+                ? `/api/download?filename=${data.platform}_video_sd.mp4&url=${encodeURIComponent(data.video_sd)}` 
                 : data.video_sd;
+            btnDownloadSd.setAttribute('download', `${data.platform}_video_sd.mp4`);
             btnDownloadSd.style.display = 'inline-flex';
         } else {
             btnDownloadSd.style.display = 'none';
@@ -145,8 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Setup nút tải Audio
         if (data.audio) {
             btnDownloadAudio.href = isHttp 
-                ? `api.php?action=download&filename=${data.platform}_audio.mp3&url=${encodeURIComponent(data.audio)}` 
+                ? `/api/download?filename=${data.platform}_audio.mp3&url=${encodeURIComponent(data.audio)}` 
                 : data.audio;
+            btnDownloadAudio.setAttribute('download', `${data.platform}_audio.mp3`);
             btnDownloadAudio.style.display = 'inline-flex';
         } else {
             btnDownloadAudio.style.display = 'none';
