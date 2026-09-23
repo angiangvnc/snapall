@@ -4,7 +4,7 @@ Tạo file SnapAll.shortcut hoàn chỉnh cho iPhone và ký số hợp lệ b�
 Hỗ trợ cả 2 cách dùng:
 1. Bấm nút Chia sẻ (Share Sheet) trong TikTok / Facebook -> Tự động nhận link.
 2. Bấm 'Sao chép liên kết' (Copy link) rồi chạy phím tắt từ Widget / Màn hình chính.
-Phiên bản: 4.1 (Clean Linear Flow - Không lỗi tham số 'choose a value for each parameter')
+Phiên bản: 4.2 (Fix lỗi lệch offset ký tự {41, 1} và bổ sung OutputName chuẩn)
 """
 
 import plistlib
@@ -27,13 +27,17 @@ def create_snapall_shortcut():
     u_vid_url = uid()
     u_vid_file = uid()
 
+    prefix = 'https://snapall.vercel.app/api/parse?url='
+    api_string = prefix + '\ufffc'
+    api_offset_key = f'{{{len(prefix)}, 1}}'
+
     actions = [
         # 0. Ghi chú thông tin
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.comment',
             'WFWorkflowActionParameters': {
                 'WFCommentActionText': (
-                    "⚡️ SnapAll Downloader v4.1\n"
+                    "⚡️ SnapAll Downloader v4.2\n"
                     "• Tự động bóc tách link từ Nút Chia sẻ (Share Sheet) TikTok, Facebook.\n"
                     "• Tự động lấy link từ Bảng nhớ tạm nếu mở phím tắt trực tiếp.\n"
                     "• Tải video TikTok KHÔNG logo / watermark.\n"
@@ -48,9 +52,7 @@ def create_snapall_shortcut():
             'WFWorkflowActionParameters': {
                 'UUID': u_link_share,
                 'WFInput': {
-                    'Value': {
-                        'Type': 'ExtensionInput'
-                    },
+                    'Value': {'Type': 'ExtensionInput'},
                     'WFSerializationType': 'WFTextTokenAttachment'
                 }
             }
@@ -70,6 +72,7 @@ def create_snapall_shortcut():
                 'WFInput': {
                     'Value': {
                         'OutputUUID': u_clip,
+                        'OutputName': 'Clipboard',
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
@@ -86,10 +89,12 @@ def create_snapall_shortcut():
                         'attachmentsByRange': {
                             '{0, 1}': {
                                 'OutputUUID': u_link_share,
+                                'OutputName': 'URLs',
                                 'Type': 'ActionOutput'
                             },
                             '{2, 1}': {
                                 'OutputUUID': u_link_clip,
+                                'OutputName': 'URLs',
                                 'Type': 'ActionOutput'
                             }
                         },
@@ -107,6 +112,7 @@ def create_snapall_shortcut():
                 'WFInput': {
                     'Value': {
                         'OutputUUID': u_combined_urls,
+                        'OutputName': 'Text',
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
@@ -122,13 +128,14 @@ def create_snapall_shortcut():
                 'WFInput': {
                     'Value': {
                         'OutputUUID': u_all_urls,
+                        'OutputName': 'URLs',
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
                 }
             }
         },
-        # 7. Ghép URL vào API Serverless
+        # 7. Ghép URL vào API Serverless (offset {41, 1} chuẩn xác)
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.gettext',
             'WFWorkflowActionParameters': {
@@ -136,12 +143,13 @@ def create_snapall_shortcut():
                 'WFTextActionText': {
                     'Value': {
                         'attachmentsByRange': {
-                            '{38, 1}': {
+                            api_offset_key: {
                                 'OutputUUID': u_url,
+                                'OutputName': 'Item from List',
                                 'Type': 'ActionOutput'
                             }
                         },
-                        'string': 'https://snapall.vercel.app/api/parse?url=\ufffc'
+                        'string': api_string
                     },
                     'WFSerializationType': 'WFTextTokenString'
                 }
@@ -155,6 +163,7 @@ def create_snapall_shortcut():
                 'WFURL': {
                     'Value': {
                         'OutputUUID': u_api_url,
+                        'OutputName': 'Text',
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
@@ -170,6 +179,7 @@ def create_snapall_shortcut():
                 'WFInput': {
                     'Value': {
                         'OutputUUID': u_api_res,
+                        'OutputName': 'Contents of URL',
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
@@ -184,6 +194,7 @@ def create_snapall_shortcut():
                 'WFURL': {
                     'Value': {
                         'OutputUUID': u_vid_url,
+                        'OutputName': 'Dictionary Value',
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
@@ -197,6 +208,7 @@ def create_snapall_shortcut():
                 'WFInput': {
                     'Value': {
                         'OutputUUID': u_vid_file,
+                        'OutputName': 'Contents of URL',
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
@@ -236,7 +248,7 @@ def create_snapall_shortcut():
     shortcut_dict = {
         'WFWorkflowMinimumClientVersion': 900,
         'WFWorkflowClientVersion': '2607.1',
-        'WFWorkflowClientRelease': '4.1',
+        'WFWorkflowClientRelease': '4.2',
         'WFWorkflowIcon': {
             'WFWorkflowIconStartColor': 4282601983,
             'WFWorkflowIconGlyphNumber': 59511
