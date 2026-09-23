@@ -35,17 +35,30 @@ export default async function handler(req, res) {
       if (data && data.code === 0 && data.data) {
         const item = data.data;
         const author = item.author?.nickname || item.author?.unique_id || 'TikTok Creator';
-        const title = item.title ? item.title.trim() : `Video TikTok của @${author}`;
+        const videoUrl = item.hdplay || item.play;
+        const audioUrl = item.music || '';
+        const labels = ['🎬 Tải Video HD (Không logo)'];
+        const medias = {
+          '🎬 Tải Video HD (Không logo)': videoUrl
+        };
+        if (audioUrl) {
+          labels.push('🎵 Trích xuất Âm thanh (Audio MP3)');
+          medias['🎵 Trích xuất Âm thanh (Audio MP3)'] = audioUrl;
+        }
+
         return res.status(200).json({
           status: 'success',
           platform: 'tiktok',
           title,
           author,
           thumbnail: item.cover || '',
-          video: item.hdplay || item.play,
+          video: videoUrl,
           video_hd: item.hdplay || item.play,
           video_sd: item.play,
-          audio: item.music
+          audio: audioUrl,
+          menu_title: `${title} (@${author})`,
+          labels,
+          medias
         });
       }
       return res.status(400).json({ status: 'error', message: 'Không thể phân giải video TikTok.' });
@@ -75,16 +88,31 @@ export default async function handler(req, res) {
       if (finalVideo) {
         const titleMatch = cleanHtml.match(/<meta\s+property="og:title"\s+content="([^"]*)"/i) || cleanHtml.match(/<title>(.*?)<\/title>/i);
         const thumbMatch = cleanHtml.match(/<meta\s+property="og:image"\s+content="([^"]*)"/i);
+        const titleText = titleMatch ? titleMatch[1] : 'Facebook Video';
+
+        const labels = ['🎬 Tải Video Facebook HD'];
+        const medias = {
+          '🎬 Tải Video Facebook HD': finalVideo
+        };
+        if (sd && hd && sd !== hd) {
+          labels.push('🎬 Tải Video Facebook SD');
+          medias['🎬 Tải Video Facebook SD'] = sd;
+        }
+        labels.push('🎵 Trích xuất Âm thanh từ Video');
+        medias['🎵 Trích xuất Âm thanh từ Video'] = finalVideo;
 
         return res.status(200).json({
           status: 'success',
           platform: 'facebook',
-          title: titleMatch ? titleMatch[1] : 'Facebook Video',
+          title: titleText,
           thumbnail: thumbMatch ? thumbMatch[1] : '',
           video: finalVideo,
           video_hd: hd || sd,
           video_sd: sd || hd,
-          audio: finalVideo
+          audio: finalVideo,
+          menu_title: titleText,
+          labels,
+          medias
         });
       }
       return res.status(400).json({ status: 'error', message: 'Không tìm thấy video Facebook công khai.' });
