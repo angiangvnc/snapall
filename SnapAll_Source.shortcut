@@ -10,7 +10,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
-				<string>⚡️ SnapAll Downloader v4.2
+				<string>⚡️ SnapAll Downloader v4.3
 • Tự động bóc tách link từ Nút Chia sẻ (Share Sheet) TikTok, Facebook.
 • Tự động lấy link từ Bảng nhớ tạm nếu mở phím tắt trực tiếp.
 • Tải video TikTok KHÔNG logo / watermark.
@@ -24,7 +24,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>F89851F6-438B-484B-B395-D637789FA7BE</string>
+				<string>3F5479AD-1924-41E1-8CDB-E7340689AA7F</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -43,7 +43,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>B727C811-6061-489F-AF55-44819318D678</string>
+				<string>53C17B5B-552B-4C04-8488-6B45780DB277</string>
 			</dict>
 		</dict>
 		<dict>
@@ -52,7 +52,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>0FFE762D-407F-4312-AA22-C16BC0976AB5</string>
+				<string>F1FEF937-CB6E-4891-BF79-ACBF1FDBF74A</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -60,7 +60,7 @@
 						<key>OutputName</key>
 						<string>Clipboard</string>
 						<key>OutputUUID</key>
-						<string>B727C811-6061-489F-AF55-44819318D678</string>
+						<string>53C17B5B-552B-4C04-8488-6B45780DB277</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -75,7 +75,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>68A0C22D-00F6-4F83-AEF1-6D218F0BCB1C</string>
+				<string>F89329AB-47CC-4386-8708-6F97E70A3F56</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -87,7 +87,7 @@
 								<key>OutputName</key>
 								<string>URLs</string>
 								<key>OutputUUID</key>
-								<string>F89851F6-438B-484B-B395-D637789FA7BE</string>
+								<string>3F5479AD-1924-41E1-8CDB-E7340689AA7F</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -96,7 +96,7 @@
 								<key>OutputName</key>
 								<string>URLs</string>
 								<key>OutputUUID</key>
-								<string>0FFE762D-407F-4312-AA22-C16BC0976AB5</string>
+								<string>F1FEF937-CB6E-4891-BF79-ACBF1FDBF74A</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -116,7 +116,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>3C597265-49EF-465E-BD5C-FAF1FA78FC87</string>
+				<string>42FB1514-A151-42E8-8138-4F871B0DFFFB</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -124,7 +124,7 @@
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>OutputUUID</key>
-						<string>68A0C22D-00F6-4F83-AEF1-6D218F0BCB1C</string>
+						<string>F89329AB-47CC-4386-8708-6F97E70A3F56</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -139,7 +139,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>E1ADFE14-FEEF-4F35-BF36-FF85DD9E6CE0</string>
+				<string>8DDAAA5B-617D-493E-B793-E6C84ED65AD3</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -147,7 +147,7 @@
 						<key>OutputName</key>
 						<string>URLs</string>
 						<key>OutputUUID</key>
-						<string>3C597265-49EF-465E-BD5C-FAF1FA78FC87</string>
+						<string>42FB1514-A151-42E8-8138-4F871B0DFFFB</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -164,7 +164,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>D8D7441A-CE8E-4E35-98CA-39848FDA84E4</string>
+				<string>59A5D16E-2958-48F9-9197-0071F8E27F73</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -176,7 +176,7 @@
 								<key>OutputName</key>
 								<string>Item from List</string>
 								<key>OutputUUID</key>
-								<string>E1ADFE14-FEEF-4F35-BF36-FF85DD9E6CE0</string>
+								<string>8DDAAA5B-617D-493E-B793-E6C84ED65AD3</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -195,15 +195,24 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>5D0BAB0C-ABF8-465D-A3EF-C36F6D807073</string>
+				<string>4272E2EB-1D9A-42E1-B1ED-3B55B4FD1DCB</string>
 				<key>WFURL</key>
 				<dict>
 					<key>Value</key>
 					<dict>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>CoercionItemClass</key>
+								<string>WFURLContentItem</string>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+							</dict>
+						</array>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>OutputUUID</key>
-						<string>D8D7441A-CE8E-4E35-98CA-39848FDA84E4</string>
+						<string>59A5D16E-2958-48F9-9197-0071F8E27F73</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -218,7 +227,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>DBB9B4D0-13A4-42C8-8E5C-65C696F2C8CA</string>
+				<string>475CCC45-7415-4239-8FB7-B762550D117E</string>
 				<key>WFDictionaryKey</key>
 				<string>video</string>
 				<key>WFInput</key>
@@ -228,7 +237,7 @@
 						<key>OutputName</key>
 						<string>Contents of URL</string>
 						<key>OutputUUID</key>
-						<string>5D0BAB0C-ABF8-465D-A3EF-C36F6D807073</string>
+						<string>4272E2EB-1D9A-42E1-B1ED-3B55B4FD1DCB</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -243,15 +252,24 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>49D3AF22-AB6D-4771-89BB-CE11485AF0B1</string>
+				<string>F58497E7-9270-403A-808D-C14EA6E339A7</string>
 				<key>WFURL</key>
 				<dict>
 					<key>Value</key>
 					<dict>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>CoercionItemClass</key>
+								<string>WFURLContentItem</string>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+							</dict>
+						</array>
 						<key>OutputName</key>
 						<string>Dictionary Value</string>
 						<key>OutputUUID</key>
-						<string>DBB9B4D0-13A4-42C8-8E5C-65C696F2C8CA</string>
+						<string>475CCC45-7415-4239-8FB7-B762550D117E</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -272,7 +290,7 @@
 						<key>OutputName</key>
 						<string>Contents of URL</string>
 						<key>OutputUUID</key>
-						<string>49D3AF22-AB6D-4771-89BB-CE11485AF0B1</string>
+						<string>F58497E7-9270-403A-808D-C14EA6E339A7</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -294,7 +312,7 @@
 		</dict>
 	</array>
 	<key>WFWorkflowClientRelease</key>
-	<string>4.2</string>
+	<string>4.3</string>
 	<key>WFWorkflowClientVersion</key>
 	<string>2607.1</string>
 	<key>WFWorkflowIcon</key>

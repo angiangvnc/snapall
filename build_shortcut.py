@@ -4,7 +4,7 @@ Tạo file SnapAll.shortcut hoàn chỉnh cho iPhone và ký số hợp lệ b�
 Hỗ trợ cả 2 cách dùng:
 1. Bấm nút Chia sẻ (Share Sheet) trong TikTok / Facebook -> Tự động nhận link.
 2. Bấm 'Sao chép liên kết' (Copy link) rồi chạy phím tắt từ Widget / Màn hình chính.
-Phiên bản: 4.2 (Fix lỗi lệch offset ký tự {41, 1} và bổ sung OutputName chuẩn)
+Phiên bản: 4.3 (Fix triệt để lỗi ép kiểu WFURLContentItem cho các khối Get Contents of URL)
 """
 
 import plistlib
@@ -37,7 +37,7 @@ def create_snapall_shortcut():
             'WFWorkflowActionIdentifier': 'is.workflow.actions.comment',
             'WFWorkflowActionParameters': {
                 'WFCommentActionText': (
-                    "⚡️ SnapAll Downloader v4.2\n"
+                    "⚡️ SnapAll Downloader v4.3\n"
                     "• Tự động bóc tách link từ Nút Chia sẻ (Share Sheet) TikTok, Facebook.\n"
                     "• Tự động lấy link từ Bảng nhớ tạm nếu mở phím tắt trực tiếp.\n"
                     "• Tải video TikTok KHÔNG logo / watermark.\n"
@@ -164,7 +164,13 @@ def create_snapall_shortcut():
                     'Value': {
                         'OutputUUID': u_api_url,
                         'OutputName': 'Text',
-                        'Type': 'ActionOutput'
+                        'Type': 'ActionOutput',
+                        'Aggrandizements': [
+                            {
+                                'Type': 'WFCoercionVariableAggrandizement',
+                                'CoercionItemClass': 'WFURLContentItem'
+                            }
+                        ]
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
                 }
@@ -195,7 +201,13 @@ def create_snapall_shortcut():
                     'Value': {
                         'OutputUUID': u_vid_url,
                         'OutputName': 'Dictionary Value',
-                        'Type': 'ActionOutput'
+                        'Type': 'ActionOutput',
+                        'Aggrandizements': [
+                            {
+                                'Type': 'WFCoercionVariableAggrandizement',
+                                'CoercionItemClass': 'WFURLContentItem'
+                            }
+                        ]
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
                 }
@@ -248,7 +260,7 @@ def create_snapall_shortcut():
     shortcut_dict = {
         'WFWorkflowMinimumClientVersion': 900,
         'WFWorkflowClientVersion': '2607.1',
-        'WFWorkflowClientRelease': '4.2',
+        'WFWorkflowClientRelease': '4.3',
         'WFWorkflowIcon': {
             'WFWorkflowIconStartColor': 4282601983,
             'WFWorkflowIconGlyphNumber': 59511

@@ -8,7 +8,19 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const inputUrl = (req.query.url || '').trim();
+  let inputUrl = (req.query.url || '').trim();
+  // Trích xuất toàn bộ URL nguyên bản sau 'url=' nếu link có chứa nhiều dấu ? hoặc &
+  if (req.url && req.url.includes('url=')) {
+    const rawUrlPart = req.url.substring(req.url.indexOf('url=') + 4);
+    if (rawUrlPart) {
+      try {
+        inputUrl = decodeURIComponent(rawUrlPart).trim();
+      } catch (e) {
+        inputUrl = rawUrlPart.trim();
+      }
+    }
+  }
+
   if (!inputUrl) {
     return res.status(400).json({ status: 'error', message: 'Vui lòng cung cấp URL.' });
   }
