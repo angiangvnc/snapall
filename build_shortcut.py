@@ -4,7 +4,7 @@ Tạo file SnapAll.shortcut hoàn chỉnh cho iPhone và ký số hợp lệ b�
 Hỗ trợ cả 2 cách dùng:
 1. Bấm nút Chia sẻ (Share Sheet) trong TikTok / Facebook -> Tự động nhận link.
 2. Bấm 'Sao chép liên kết' (Copy link) rồi chạy phím tắt từ Widget / Màn hình chính.
-Phiên bản: 4.0 (Fix hoàn toàn lỗi nhận diện URL từ TikTok / Facebook Share Sheet)
+Phiên bản: 4.1 (Clean Linear Flow - Không lỗi tham số 'choose a value for each parameter')
 """
 
 import plistlib
@@ -16,29 +16,24 @@ def uid():
     return str(uuid.uuid4()).upper()
 
 def create_snapall_shortcut():
-    # UUIDs
     u_link_share = uid()
     u_clip = uid()
     u_link_clip = uid()
     u_combined_urls = uid()
     u_all_urls = uid()
     u_url = uid()
-
-    g_url = uid()
     u_api_url = uid()
     u_api_res = uid()
     u_vid_url = uid()
-
-    g_vid = uid()
     u_vid_file = uid()
 
     actions = [
-        # 0. Ghi chú thông tin phiên bản
+        # 0. Ghi chú thông tin
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.comment',
             'WFWorkflowActionParameters': {
                 'WFCommentActionText': (
-                    "⚡️ SnapAll v4.0 Downloader\n"
+                    "⚡️ SnapAll Downloader v4.1\n"
                     "• Tự động bóc tách link từ Nút Chia sẻ (Share Sheet) TikTok, Facebook.\n"
                     "• Tự động lấy link từ Bảng nhớ tạm nếu mở phím tắt trực tiếp.\n"
                     "• Tải video TikTok KHÔNG logo / watermark.\n"
@@ -47,7 +42,7 @@ def create_snapall_shortcut():
                 )
             }
         },
-        # 1. Trích xuất link trực tiếp từ Đầu vào phím tắt (Share Sheet)
+        # 1. Trích xuất link từ Đầu vào phím tắt (Share Sheet)
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.detect.link',
             'WFWorkflowActionParameters': {
@@ -81,7 +76,7 @@ def create_snapall_shortcut():
                 }
             }
         },
-        # 4. Gộp 2 nguồn link (Ưu tiên link từ Chia sẻ lên đầu, tiếp đến là Clipboard)
+        # 4. Gộp các link tìm thấy (Ưu tiên link Chia sẻ lên đầu, tiếp đến Clipboard)
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.gettext',
             'WFWorkflowActionParameters': {
@@ -104,7 +99,7 @@ def create_snapall_shortcut():
                 }
             }
         },
-        # 5. Phân giải danh sách link sạch
+        # 5. Phân giải danh sách URL chuẩn
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.detect.link',
             'WFWorkflowActionParameters': {
@@ -118,7 +113,7 @@ def create_snapall_shortcut():
                 }
             }
         },
-        # 6. Lấy link đầu tiên tìm thấy
+        # 6. Chọn URL đầu tiên
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.getitemfromlist',
             'WFWorkflowActionParameters': {
@@ -133,23 +128,7 @@ def create_snapall_shortcut():
                 }
             }
         },
-        # 7. Kiểm tra: NẾU có link hợp lệ
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': g_url,
-                'WFCondition': 100,  # Has Any Value
-                'WFControlFlowMode': 0,  # If
-                'WFInput': {
-                    'Value': {
-                        'OutputUUID': u_url,
-                        'Type': 'ActionOutput'
-                    },
-                    'WFSerializationType': 'WFTextTokenAttachment'
-                }
-            }
-        },
-        # 8. Tạo URL gọi API Serverless
+        # 7. Ghép URL vào API Serverless
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.gettext',
             'WFWorkflowActionParameters': {
@@ -168,7 +147,7 @@ def create_snapall_shortcut():
                 }
             }
         },
-        # 9. Gửi request đến API phân giải video
+        # 8. Gọi API lấy dữ liệu JSON
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.downloadurl',
             'WFWorkflowActionParameters': {
@@ -182,7 +161,7 @@ def create_snapall_shortcut():
                 }
             }
         },
-        # 10. Trích xuất link video từ kết quả JSON
+        # 9. Bóc tách link video sạch logo
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
             'WFWorkflowActionParameters': {
@@ -197,23 +176,7 @@ def create_snapall_shortcut():
                 }
             }
         },
-        # 11. Kiểm tra: NẾU API trả về link video hợp lệ
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': g_vid,
-                'WFCondition': 100,  # Has Any Value
-                'WFControlFlowMode': 0,  # If
-                'WFInput': {
-                    'Value': {
-                        'OutputUUID': u_vid_url,
-                        'Type': 'ActionOutput'
-                    },
-                    'WFSerializationType': 'WFTextTokenAttachment'
-                }
-            }
-        },
-        # 12. Tải file video MP4 chất lượng cao
+        # 10. Tải file video MP4
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.downloadurl',
             'WFWorkflowActionParameters': {
@@ -227,7 +190,7 @@ def create_snapall_shortcut():
                 }
             }
         },
-        # 13. Tự động lưu video vào Album Cuộn Camera
+        # 11. Lưu video vào Thư viện Ảnh (Album Cuộn Camera)
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.savetocameraroll',
             'WFWorkflowActionParameters': {
@@ -240,67 +203,16 @@ def create_snapall_shortcut():
                 }
             }
         },
-        # 14. Thông báo hoàn tất
+        # 12. Bắn thông báo hoàn tất
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.notification',
             'WFWorkflowActionParameters': {
                 'WFNotificationActionTitle': '⚡️ SnapAll',
                 'WFNotificationActionBody': '✅ Đã tải và lưu video vào Cuộn Camera!'
             }
-        },
-        # 15. NẾU KHÔNG có video hợp lệ từ API (Else g_vid)
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': g_vid,
-                'WFControlFlowMode': 1  # Otherwise
-            }
-        },
-        # 16. Cảnh báo lỗi phân giải video
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.alert',
-            'WFWorkflowActionParameters': {
-                'WFAlertActionTitle': '⚡️ SnapAll',
-                'WFAlertActionMessage': '⚠️ Không tìm thấy video hợp lệ từ liên kết này hoặc video ở chế độ riêng tư. Vui lòng kiểm tra lại!',
-                'WFAlertActionCancelButtonShown': False
-            }
-        },
-        # 17. Kết thúc điều kiện video (End If g_vid)
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': g_vid,
-                'WFControlFlowMode': 2  # End If
-            }
-        },
-        # 18. NẾU KHÔNG tìm thấy link nào từ cả Chia sẻ lẫn Clipboard (Else g_url)
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': g_url,
-                'WFControlFlowMode': 1  # Otherwise
-            }
-        },
-        # 19. Cảnh báo chưa có link
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.alert',
-            'WFWorkflowActionParameters': {
-                'WFAlertActionTitle': '⚡️ SnapAll',
-                'WFAlertActionMessage': '⚠️ Không tìm thấy liên kết video!\n\nVui lòng mở TikTok hoặc Facebook, bấm nút Chia sẻ (Share) -> chọn SnapAll, hoặc Sao chép liên kết trước khi chạy phím tắt.',
-                'WFAlertActionCancelButtonShown': False
-            }
-        },
-        # 20. Kết thúc điều kiện URL (End If g_url)
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': g_url,
-                'WFControlFlowMode': 2  # End If
-            }
         }
     ]
 
-    # Đăng ký ĐẦY ĐỦ tất cả các loại dữ liệu đầu vào để iOS KHÔNG BAO GIỜ lọc bỏ hoặc làm rỗng link khi Chia sẻ từ TikTok, Facebook, Safari, Instagram...
     all_content_classes = [
         'WFAppStoreAppContentItem',
         'WFArticleContentItem',
@@ -324,7 +236,7 @@ def create_snapall_shortcut():
     shortcut_dict = {
         'WFWorkflowMinimumClientVersion': 900,
         'WFWorkflowClientVersion': '2607.1',
-        'WFWorkflowClientRelease': '4.0',
+        'WFWorkflowClientRelease': '4.1',
         'WFWorkflowIcon': {
             'WFWorkflowIconStartColor': 4282601983,
             'WFWorkflowIconGlyphNumber': 59511
