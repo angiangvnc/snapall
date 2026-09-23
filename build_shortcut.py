@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 """
-Tạo file SnapAll.shortcut hoàn chỉnh cho iPhone và ký số hợp lệ bằng công cụ shortcuts trên macOS.
-Kiến trúc v6.0 - Fix lỗi URL: dùng Set Variable thay cho If Result.
-1. Nhận link thông minh 3 lớp: Nút Chia sẻ (Share Sheet) -> Bảng nhớ tạm (Clipboard) -> Hộp thoại dán link.
-2. Dùng Set Variable để lưu URL cuối cùng - tránh lỗi "If Result" không hợp lệ.
-3. Menu lựa chọn đa năng: Tải Video HD hoặc Trích xuất Âm thanh MP3.
-4. Tự động lưu: Video -> Cuộn Camera, Âm thanh -> Tệp.
-Phiên bản: 6.0 (URL Fix Edition)
+SnapAll Pro v7.0 - Fix dứt điểm lỗi URL.
+Thêm action Get Variable sau END IF để lấy final_url ra rõ ràng,
+rồi dùng output của action đó trong API URL.
 """
 
 import plistlib
@@ -18,7 +14,6 @@ def uid():
     return str(uuid.uuid4()).upper()
 
 def create_snapall_shortcut():
-    # UUID cho từng action
     u_link_share    = uid()
     u_clip          = uid()
     u_link_clip     = uid()
@@ -31,8 +26,8 @@ def create_snapall_shortcut():
     u_ask_urls      = uid()
     u_ask_first     = uid()
 
-    # Tên biến lưu URL cuối cùng (Named Variable)
     var_final_url   = 'final_url'
+    u_get_final_url = uid()   # output của Get Variable action
 
     u_api_res       = uid()
     u_menu_title    = uid()
@@ -54,10 +49,10 @@ def create_snapall_shortcut():
             'WFWorkflowActionIdentifier': 'is.workflow.actions.comment',
             'WFWorkflowActionParameters': {
                 'WFCommentActionText': (
-                    "⚡️ SnapAll Pro v6.0\n"
+                    "⚡️ SnapAll Pro v7.0\n"
                     "• Nhận link từ Share Sheet, Clipboard, hoặc hộp thoại.\n"
+                    "• Dùng Set Variable + Get Variable để lấy URL an toàn.\n"
                     "• Gọi API snapall.vercel.app để bóc tách link video.\n"
-                    "• Menu chọn: Tải Video HD hoặc Trích xuất Audio MP3.\n"
                     "• Tự động lưu: Video → Cuộn Camera, Audio → Tệp."
                 )
             }
@@ -239,7 +234,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 12. Lấy link đầu tiên từ input người dùng
+        # 12. Lấy link đầu tiên từ input
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.getitemfromlist',
             'WFWorkflowActionParameters': {
@@ -281,7 +276,23 @@ def create_snapall_shortcut():
             }
         },
 
-        # 15. Gọi API SnapAll - dùng Named Variable final_url
+        # 15. Get Variable final_url -> output dùng được trong URL
+        {
+            'WFWorkflowActionIdentifier': 'is.workflow.actions.getvariable',
+            'WFWorkflowActionParameters': {
+                'UUID': u_get_final_url,
+                'CustomOutputName': 'final_url',
+                'WFVariable': {
+                    'Value': {
+                        'VariableName': var_final_url,
+                        'Type': 'Variable'
+                    },
+                    'WFSerializationType': 'WFTextTokenAttachment'
+                }
+            }
+        },
+
+        # 16. Gọi API SnapAll - dùng output của Get Variable
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.downloadurl',
             'WFWorkflowActionParameters': {
@@ -293,7 +304,7 @@ def create_snapall_shortcut():
                             {
                                 'WFKey': {'Value': {'string': 'User-Agent'}, 'WFSerializationType': 'WFTextTokenString'},
                                 'WFItemType': 0,
-                                'WFValue': {'Value': {'string': 'SnapAll/6.0 iOS'}, 'WFSerializationType': 'WFTextTokenString'}
+                                'WFValue': {'Value': {'string': 'SnapAll/7.0 iOS'}, 'WFSerializationType': 'WFTextTokenString'}
                             }
                         ]
                     },
@@ -303,8 +314,9 @@ def create_snapall_shortcut():
                     'Value': {
                         'attachmentsByRange': {
                             api_offset_key: {
-                                'Type': 'Variable',
-                                'VariableName': var_final_url,
+                                'OutputUUID': u_get_final_url,
+                                'OutputName': 'final_url',
+                                'Type': 'ActionOutput',
                                 'Aggrandizements': [
                                     {
                                         'Type': 'WFCoercionVariableAggrandizement',
@@ -320,7 +332,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 16. Lấy menu_title
+        # 17. Lấy menu_title
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
             'WFWorkflowActionParameters': {
@@ -338,7 +350,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 17. Lấy labels
+        # 18. Lấy labels
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
             'WFWorkflowActionParameters': {
@@ -356,7 +368,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 18. Lấy medias
+        # 19. Lấy medias
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
             'WFWorkflowActionParameters': {
@@ -374,7 +386,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 19. Menu lựa chọn
+        # 20. Menu lựa chọn
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.choosefromlist',
             'WFWorkflowActionParameters': {
@@ -405,7 +417,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 20. Lấy download URL
+        # 21. Lấy download URL
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
             'WFWorkflowActionParameters': {
@@ -435,7 +447,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 21. Tải file media
+        # 22. Tải file media
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.downloadurl',
             'WFWorkflowActionParameters': {
@@ -463,7 +475,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 22. IF: chứa 🎵?
+        # 23. IF: chứa 🎵?
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
             'WFWorkflowActionParameters': {
@@ -485,7 +497,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 23. Lưu Audio vào Tệp
+        # 24. Lưu Audio vào Tệp
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.documentpicker.save',
             'WFWorkflowActionParameters': {
@@ -501,7 +513,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 24. Thông báo Audio
+        # 25. Thông báo Audio
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.notification',
             'WFWorkflowActionParameters': {
@@ -510,7 +522,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 25. ELSE (Video)
+        # 26. ELSE (Video)
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
             'WFWorkflowActionParameters': {
@@ -519,7 +531,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 26. Lưu Video vào Cuộn Camera
+        # 27. Lưu Video vào Cuộn Camera
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.savetocameraroll',
             'WFWorkflowActionParameters': {
@@ -534,7 +546,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 27. Thông báo Video
+        # 28. Thông báo Video
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.notification',
             'WFWorkflowActionParameters': {
@@ -543,7 +555,7 @@ def create_snapall_shortcut():
             }
         },
 
-        # 28. END IF save type
+        # 29. END IF save type
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
             'WFWorkflowActionParameters': {
@@ -554,38 +566,23 @@ def create_snapall_shortcut():
     ]
 
     all_content_classes = [
-        'WFAppStoreAppContentItem',
-        'WFArticleContentItem',
-        'WFContactContentItem',
-        'WFDateContentItem',
-        'WFEmailAddressContentItem',
-        'WFGenericFileContentItem',
-        'WFImageContentItem',
-        'WFiTunesProductContentItem',
-        'WFLocationContentItem',
-        'WFDCMapsLinkContentItem',
-        'WFAVAssetContentItem',
-        'WFPDFContentItem',
-        'WFPhoneNumberContentItem',
-        'WFRichTextContentItem',
-        'WFSafariWebPageContentItem',
-        'WFStringContentItem',
-        'WFURLContentItem'
+        'WFAppStoreAppContentItem', 'WFArticleContentItem', 'WFContactContentItem',
+        'WFDateContentItem', 'WFEmailAddressContentItem', 'WFGenericFileContentItem',
+        'WFImageContentItem', 'WFiTunesProductContentItem', 'WFLocationContentItem',
+        'WFDCMapsLinkContentItem', 'WFAVAssetContentItem', 'WFPDFContentItem',
+        'WFPhoneNumberContentItem', 'WFRichTextContentItem', 'WFSafariWebPageContentItem',
+        'WFStringContentItem', 'WFURLContentItem'
     ]
 
     shortcut_dict = {
         'WFWorkflowMinimumClientVersion': 900,
         'WFWorkflowClientVersion': '2607.1',
-        'WFWorkflowClientRelease': '6.0',
+        'WFWorkflowClientRelease': '7.0',
         'WFWorkflowIcon': {
             'WFWorkflowIconStartColor': 4282601983,
             'WFWorkflowIconGlyphNumber': 59511
         },
-        'WFWorkflowTypes': [
-            'NCWidget',
-            'ActionExtension',
-            'QuickLook'
-        ],
+        'WFWorkflowTypes': ['NCWidget', 'ActionExtension', 'QuickLook'],
         'WFWorkflowInputContentItemClasses': all_content_classes,
         'WFWorkflowActions': actions
     }
