@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 Tạo file SnapAll.shortcut hoàn chỉnh cho iPhone và ký số hợp lệ bằng công cụ shortcuts trên macOS.
+Hỗ trợ cả 2 cách dùng:
+1. Bấm nút Chia sẻ (Share Sheet) trong TikTok / Facebook.
+2. Bấm 'Sao chép liên kết' (Copy link) rồi chạy phím tắt từ Widget / Màn hình chính.
 """
 
 import plistlib
@@ -12,15 +15,14 @@ def uid():
     return str(uuid.uuid4()).upper()
 
 def create_snapall_shortcut():
-    u_link = uid()
-    u_api_url = uid()
+    u_clip = uid()
+    u_raw = uid()
+    u_match = uid()
+    u_url = uid()
+    u_api = uid()
     u_req = uid()
-    u_data = uid()
-    u_play = uid()
-    u_music = uid()
-    u_video = uid()
-    u_audio = uid()
-    u_menu_grp = uid()
+    u_video_url = uid()
+    u_video_file = uid()
 
     actions = [
         # 1. Ghi chú
@@ -28,105 +30,116 @@ def create_snapall_shortcut():
             'WFWorkflowActionIdentifier': 'is.workflow.actions.comment',
             'WFWorkflowActionParameters': {
                 'WFCommentActionText': (
-                    "⚡️ SnapAll Downloader v2.0\n"
-                    "• Tải video TikTok KHÔNG logo / watermark ➔ Lưu vào Thư viện Ảnh.\n"
-                    "• Trích xuất âm thanh (Audio MP3) ➔ Lưu vào Tệp / Chia sẻ.\n"
-                    "• Hoạt động qua nút Chia sẻ (Share Sheet) trong app TikTok."
+                    "⚡️ SnapAll v3.0 Downloader\n"
+                    "• Tự động nhận link từ Nút Chia sẻ HOẶC Bảng nhớ tạm (khi bấm Sao chép liên kết).\n"
+                    "• Tải video TikTok KHÔNG logo / watermark.\n"
+                    "• Tải video Facebook HD/SD.\n"
+                    "• Tự động lưu video thẳng vào Thư viện Ảnh (Cuộn Camera)!"
                 )
             }
         },
-        # 2. Lấy link từ Bảng chia sẻ
+        # 2. Lấy nội dung từ Bảng nhớ tạm
         {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.detect.link',
+            'WFWorkflowActionIdentifier': 'is.workflow.actions.getclipboard',
             'WFWorkflowActionParameters': {
-                'UUID': u_link,
-                'WFInput': {
-                    'Value': {
-                        'Type': 'ExtensionInput'
-                    },
-                    'WFSerializationType': 'WFTextTokenAttachment'
-                }
+                'UUID': u_clip
             }
         },
-        # 3. Tạo URL gọi TikWM API
+        # 3. Gộp cả Đầu vào chia sẻ và Bảng nhớ tạm
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.gettext',
             'WFWorkflowActionParameters': {
-                'UUID': u_api_url,
+                'UUID': u_raw,
                 'WFTextActionText': {
                     'Value': {
                         'attachmentsByRange': {
-                            '{31, 1}': {
-                                'OutputUUID': u_link,
+                            '{0, 1}': {
+                                'Type': 'ExtensionInput'
+                            },
+                            '{2, 1}': {
+                                'OutputUUID': u_clip,
                                 'Type': 'ActionOutput'
                             }
                         },
-                        'string': 'https://www.tikwm.com/api/?url=\ufffc'
+                        'string': '\ufffc\n\ufffc'
                     },
                     'WFSerializationType': 'WFTextTokenString'
                 }
             }
         },
-        # 4. Tải JSON từ TikWM API
+        # 4. Trích xuất URL chuẩn bằng RegEx
+        {
+            'WFWorkflowActionIdentifier': 'is.workflow.actions.text.match',
+            'WFWorkflowActionParameters': {
+                'UUID': u_match,
+                'WFMatchTextPattern': 'https?://[a-zA-Z0-9\\.\\_\\/\\-\\?\\=\\&\\%\\#\\+]+',
+                'WFMatchTextCaseSensitive': False,
+                'text': {
+                    'Value': {
+                        'OutputUUID': u_raw,
+                        'Type': 'ActionOutput'
+                    },
+                    'WFSerializationType': 'WFTextTokenAttachment'
+                }
+            }
+        },
+        # 5. Lấy liên kết đầu tiên
+        {
+            'WFWorkflowActionIdentifier': 'is.workflow.actions.getitemfromlist',
+            'WFWorkflowActionParameters': {
+                'UUID': u_url,
+                'WFItemSpecifier': 'First Item',
+                'WFInput': {
+                    'Value': {
+                        'OutputUUID': u_match,
+                        'Type': 'ActionOutput'
+                    },
+                    'WFSerializationType': 'WFTextTokenAttachment'
+                }
+            }
+        },
+        # 6. Tạo đường dẫn gọi API Vercel Serverless
+        {
+            'WFWorkflowActionIdentifier': 'is.workflow.actions.gettext',
+            'WFWorkflowActionParameters': {
+                'UUID': u_api,
+                'WFTextActionText': {
+                    'Value': {
+                        'attachmentsByRange': {
+                            '{38, 1}': {
+                                'OutputUUID': u_url,
+                                'Type': 'ActionOutput'
+                            }
+                        },
+                        'string': 'https://snapall.vercel.app/api/parse?url=\ufffc'
+                    },
+                    'WFSerializationType': 'WFTextTokenString'
+                }
+            }
+        },
+        # 7. Gọi API Vercel lấy JSON
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.downloadurl',
             'WFWorkflowActionParameters': {
                 'UUID': u_req,
                 'WFURL': {
                     'Value': {
-                        'OutputUUID': u_api_url,
+                        'OutputUUID': u_api,
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
                 }
             }
         },
-        # 5. Lấy trường data
+        # 8. Bóc trường video từ JSON
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
             'WFWorkflowActionParameters': {
-                'UUID': u_data,
-                'WFDictionaryKey': 'data',
+                'UUID': u_video_url,
+                'WFDictionaryKey': 'video',
                 'WFInput': {
                     'Value': {
                         'OutputUUID': u_req,
-                        'Type': 'ActionOutput'
-                    },
-                    'WFSerializationType': 'WFTextTokenAttachment'
-                }
-            }
-        },
-        # 6. Menu Start (WFControlFlowMode: 0)
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.choosefrommenu',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': u_menu_grp,
-                'WFControlFlowMode': 0,
-                'WFMenuPrompt': '⚡️ SnapAll: Bạn muốn tải gì?',
-                'WFMenuItems': [
-                    '🎬 Tải Video HD (Không Logo)',
-                    '🎵 Trích Xuất Âm Thanh (MP3)'
-                ]
-            }
-        },
-        # 7. Menu Item 1: Video (WFControlFlowMode: 1)
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.choosefrommenu',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': u_menu_grp,
-                'WFControlFlowMode': 1,
-                'WFMenuItemTitle': '🎬 Tải Video HD (Không Logo)'
-            }
-        },
-        # 8. Lấy khóa play
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
-            'WFWorkflowActionParameters': {
-                'UUID': u_play,
-                'WFDictionaryKey': 'play',
-                'WFInput': {
-                    'Value': {
-                        'OutputUUID': u_data,
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
@@ -137,94 +150,35 @@ def create_snapall_shortcut():
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.downloadurl',
             'WFWorkflowActionParameters': {
-                'UUID': u_video,
+                'UUID': u_video_file,
                 'WFURL': {
                     'Value': {
-                        'OutputUUID': u_play,
+                        'OutputUUID': u_video_url,
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
                 }
             }
         },
-        # 10. Lưu vào Album ảnh (Cuộn Camera)
+        # 10. Lưu thẳng vào Cuộn Camera (Album ảnh)
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.savetocameraroll',
             'WFWorkflowActionParameters': {
                 'WFInput': {
                     'Value': {
-                        'OutputUUID': u_video,
+                        'OutputUUID': u_video_file,
                         'Type': 'ActionOutput'
                     },
                     'WFSerializationType': 'WFTextTokenAttachment'
                 }
             }
         },
-        # 11. Menu Item 2: Audio (WFControlFlowMode: 1)
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.choosefrommenu',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': u_menu_grp,
-                'WFControlFlowMode': 1,
-                'WFMenuItemTitle': '🎵 Trích Xuất Âm Thanh (MP3)'
-            }
-        },
-        # 12. Lấy khóa music
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
-            'WFWorkflowActionParameters': {
-                'UUID': u_music,
-                'WFDictionaryKey': 'music',
-                'WFInput': {
-                    'Value': {
-                        'OutputUUID': u_data,
-                        'Type': 'ActionOutput'
-                    },
-                    'WFSerializationType': 'WFTextTokenAttachment'
-                }
-            }
-        },
-        # 13. Tải file audio MP3
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.downloadurl',
-            'WFWorkflowActionParameters': {
-                'UUID': u_audio,
-                'WFURL': {
-                    'Value': {
-                        'OutputUUID': u_music,
-                        'Type': 'ActionOutput'
-                    },
-                    'WFSerializationType': 'WFTextTokenAttachment'
-                }
-            }
-        },
-        # 14. Bảng chia sẻ (Lưu vào Tệp / Gửi ứng dụng)
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.sharesheet',
-            'WFWorkflowActionParameters': {
-                'WFInput': {
-                    'Value': {
-                        'OutputUUID': u_audio,
-                        'Type': 'ActionOutput'
-                    },
-                    'WFSerializationType': 'WFTextTokenAttachment'
-                }
-            }
-        },
-        # 15. Menu End (WFControlFlowMode: 2)
-        {
-            'WFWorkflowActionIdentifier': 'is.workflow.actions.choosefrommenu',
-            'WFWorkflowActionParameters': {
-                'GroupingIdentifier': u_menu_grp,
-                'WFControlFlowMode': 2
-            }
-        },
-        # 16. Thông báo hoàn thành
+        # 11. Thông báo hoàn thành
         {
             'WFWorkflowActionIdentifier': 'is.workflow.actions.notification',
             'WFWorkflowActionParameters': {
                 'WFNotificationActionTitle': '⚡️ SnapAll',
-                'WFNotificationActionBody': '✅ Đã tải và lưu thành công!'
+                'WFNotificationActionBody': '✅ Đã tải và lưu video vào Cuộn Camera!'
             }
         }
     ]
@@ -234,12 +188,12 @@ def create_snapall_shortcut():
         'WFWorkflowClientVersion': '2607.1',
         'WFWorkflowClientRelease': '3.0',
         'WFWorkflowIcon': {
-            'WFWorkflowIconStartColor': 4282601983, # Xanh dương / Gradient
-            'WFWorkflowIconGlyphNumber': 59511      # Tia chớp / Tải xuống
+            'WFWorkflowIconStartColor': 4282601983,
+            'WFWorkflowIconGlyphNumber': 59511
         },
         'WFWorkflowTypes': [
             'NCWidget',
-            'ActionExtension' # Hiện trong bảng chia sẻ (Share Sheet)
+            'ActionExtension'
         ],
         'WFWorkflowInputContentItemClasses': [
             'WFURLContentItem',
@@ -254,9 +208,7 @@ def create_snapall_shortcut():
     with open(source_path, 'wb') as f:
         plistlib.dump(shortcut_dict, f)
 
-    # Ký số bằng lệnh của macOS
-    cmd = ['shortcuts', 'sign', '--mode', 'anyone', '--input', source_path, '--output', output_path]
-    subprocess.run(cmd, check=True)
+    subprocess.run(['shortcuts', 'sign', '--mode', 'anyone', '--input', source_path, '--output', output_path], check=True)
     print(f"✅ Đã tạo và ký thành công {output_path} ({os.path.getsize(output_path)} bytes)")
 
 if __name__ == '__main__':

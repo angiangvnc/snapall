@@ -10,29 +10,20 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
-				<string>⚡️ SnapAll Downloader v2.0
-• Tải video TikTok KHÔNG logo / watermark ➔ Lưu vào Thư viện Ảnh.
-• Trích xuất âm thanh (Audio MP3) ➔ Lưu vào Tệp / Chia sẻ.
-• Hoạt động qua nút Chia sẻ (Share Sheet) trong app TikTok.</string>
+				<string>⚡️ SnapAll v3.0 Downloader
+• Tự động nhận link từ Nút Chia sẻ HOẶC Bảng nhớ tạm (khi bấm Sao chép liên kết).
+• Tải video TikTok KHÔNG logo / watermark.
+• Tải video Facebook HD/SD.
+• Tự động lưu video thẳng vào Thư viện Ảnh (Cuộn Camera)!</string>
 			</dict>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.detect.link</string>
+			<string>is.workflow.actions.getclipboard</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>EB65AF66-941A-4919-B6D5-984CA49D19B5</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>Type</key>
-						<string>ExtensionInput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
+				<string>4D55F3BF-E598-42C9-B268-0DF69DEC22E3</string>
 			</dict>
 		</dict>
 		<dict>
@@ -41,23 +32,106 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>981C308F-C2BB-4FCC-8C6C-DA600147261C</string>
+				<string>7D6CABC4-D188-46EF-9E39-55574948B914</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
 					<dict>
 						<key>attachmentsByRange</key>
 						<dict>
-							<key>{31, 1}</key>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ExtensionInput</string>
+							</dict>
+							<key>{2, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>EB65AF66-941A-4919-B6D5-984CA49D19B5</string>
+								<string>4D55F3BF-E598-42C9-B268-0DF69DEC22E3</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
 						</dict>
 						<key>string</key>
-						<string>https://www.tikwm.com/api/?url=￼</string>
+						<string>￼
+￼</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.match</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>BDA3E336-4D27-4F33-9342-AFD0C71F8072</string>
+				<key>WFMatchTextCaseSensitive</key>
+				<false/>
+				<key>WFMatchTextPattern</key>
+				<string>https?://[a-zA-Z0-9\.\_\/\-\?\=\&amp;\%\#\+]+</string>
+				<key>text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>7D6CABC4-D188-46EF-9E39-55574948B914</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getitemfromlist</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>5C443E28-3F61-473B-9493-8DF2F3F0BFB1</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>BDA3E336-4D27-4F33-9342-AFD0C71F8072</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFItemSpecifier</key>
+				<string>First Item</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>1440BAC3-EA02-4D58-807E-962877B10CBD</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{38, 1}</key>
+							<dict>
+								<key>OutputUUID</key>
+								<string>5C443E28-3F61-473B-9493-8DF2F3F0BFB1</string>
+								<key>Type</key>
+								<string>ActionOutput</string>
+							</dict>
+						</dict>
+						<key>string</key>
+						<string>https://snapall.vercel.app/api/parse?url=￼</string>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenString</string>
@@ -70,13 +144,13 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>679F0833-A525-4873-A7EB-5A69C6F2B5BD</string>
+				<string>3B07224B-0FF8-4352-B310-4BE431940634</string>
 				<key>WFURL</key>
 				<dict>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>981C308F-C2BB-4FCC-8C6C-DA600147261C</string>
+						<string>1440BAC3-EA02-4D58-807E-962877B10CBD</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -91,69 +165,15 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>558E6226-4EA6-497D-AFA7-187C1458E72D</string>
+				<string>36CF5CBD-6C41-447A-8B67-62B69CF65C1E</string>
 				<key>WFDictionaryKey</key>
-				<string>data</string>
+				<string>video</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>679F0833-A525-4873-A7EB-5A69C6F2B5BD</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.choosefrommenu</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>75232CD0-CBE8-4515-99B9-659848D9AF44</string>
-				<key>WFControlFlowMode</key>
-				<integer>0</integer>
-				<key>WFMenuItems</key>
-				<array>
-					<string>🎬 Tải Video HD (Không Logo)</string>
-					<string>🎵 Trích Xuất Âm Thanh (MP3)</string>
-				</array>
-				<key>WFMenuPrompt</key>
-				<string>⚡️ SnapAll: Bạn muốn tải gì?</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.choosefrommenu</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>75232CD0-CBE8-4515-99B9-659848D9AF44</string>
-				<key>WFControlFlowMode</key>
-				<integer>1</integer>
-				<key>WFMenuItemTitle</key>
-				<string>🎬 Tải Video HD (Không Logo)</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.getvalueforkey</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>F96EE1BE-2821-46CD-908B-334D30189FB3</string>
-				<key>WFDictionaryKey</key>
-				<string>play</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputUUID</key>
-						<string>558E6226-4EA6-497D-AFA7-187C1458E72D</string>
+						<string>3B07224B-0FF8-4352-B310-4BE431940634</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -168,13 +188,13 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>E5693689-5A37-4232-8AAF-978366558BAC</string>
+				<string>3F064BC7-CF80-43CF-A12D-7782FD13283B</string>
 				<key>WFURL</key>
 				<dict>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>F96EE1BE-2821-46CD-908B-334D30189FB3</string>
+						<string>36CF5CBD-6C41-447A-8B67-62B69CF65C1E</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -193,100 +213,13 @@
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>E5693689-5A37-4232-8AAF-978366558BAC</string>
+						<string>3F064BC7-CF80-43CF-A12D-7782FD13283B</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
 				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.choosefrommenu</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>75232CD0-CBE8-4515-99B9-659848D9AF44</string>
-				<key>WFControlFlowMode</key>
-				<integer>1</integer>
-				<key>WFMenuItemTitle</key>
-				<string>🎵 Trích Xuất Âm Thanh (MP3)</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.getvalueforkey</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>25DF608A-6E2D-4528-820E-2324FDC70E77</string>
-				<key>WFDictionaryKey</key>
-				<string>music</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputUUID</key>
-						<string>558E6226-4EA6-497D-AFA7-187C1458E72D</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.downloadurl</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>748FCC25-72EA-4178-A1C2-5CE440323CA7</string>
-				<key>WFURL</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputUUID</key>
-						<string>25DF608A-6E2D-4528-820E-2324FDC70E77</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.sharesheet</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputUUID</key>
-						<string>748FCC25-72EA-4178-A1C2-5CE440323CA7</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.choosefrommenu</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>75232CD0-CBE8-4515-99B9-659848D9AF44</string>
-				<key>WFControlFlowMode</key>
-				<integer>2</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -295,7 +228,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFNotificationActionBody</key>
-				<string>✅ Đã tải và lưu thành công!</string>
+				<string>✅ Đã tải và lưu video vào Cuộn Camera!</string>
 				<key>WFNotificationActionTitle</key>
 				<string>⚡️ SnapAll</string>
 			</dict>
