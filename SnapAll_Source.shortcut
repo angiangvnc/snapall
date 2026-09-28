@@ -6,39 +6,11 @@
 	<array>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvariable</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>Aggrandizements</key>
-						<array>
-							<dict>
-								<key>CoercionItemClass</key>
-								<string>WFStringContentItem</string>
-								<key>Type</key>
-								<string>WFCoercionVariableAggrandizement</string>
-							</dict>
-						</array>
-						<key>Type</key>
-						<string>ExtensionInput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFVariableName</key>
-				<string>shared_url</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.conditional</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>FEB07824-2ADB-4C4B-817C-10E51B18FF4A</string>
+				<string>2E58990A-BD21-4CA2-8B6B-7CA80DA67BC3</string>
 				<key>WFCondition</key>
 				<integer>101</integer>
 				<key>WFControlFlowMode</key>
@@ -51,19 +23,8 @@
 					<dict>
 						<key>Value</key>
 						<dict>
-							<key>Aggrandizements</key>
-							<array>
-								<dict>
-									<key>CoercionItemClass</key>
-									<string>WFStringContentItem</string>
-									<key>Type</key>
-									<string>WFCoercionVariableAggrandizement</string>
-								</dict>
-							</array>
 							<key>Type</key>
-							<string>Variable</string>
-							<key>VariableName</key>
-							<string>shared_url</string>
+							<string>ExtensionInput</string>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
@@ -77,7 +38,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>0D08BC3A-C663-4CCF-B844-BCFCDFE81D26</string>
+				<string>2C0FE28F-FB09-4364-B42A-CE822A938F90</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuItems</key>
@@ -105,7 +66,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>0D08BC3A-C663-4CCF-B844-BCFCDFE81D26</string>
+				<string>2C0FE28F-FB09-4364-B42A-CE822A938F90</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuItemTitle</key>
@@ -118,7 +79,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>75B36419-C38C-4338-8989-4CCEEF14ACBA</string>
+				<string>E6508E87-88AB-4ED8-8092-37C66E2E5595</string>
 				<key>WFAskActionDefaultAnswer</key>
 				<dict>
 					<key>Value</key>
@@ -155,7 +116,7 @@
 						<key>OutputName</key>
 						<string>Provided Input</string>
 						<key>OutputUUID</key>
-						<string>75B36419-C38C-4338-8989-4CCEEF14ACBA</string>
+						<string>E6508E87-88AB-4ED8-8092-37C66E2E5595</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -172,7 +133,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>0D08BC3A-C663-4CCF-B844-BCFCDFE81D26</string>
+				<string>2C0FE28F-FB09-4364-B42A-CE822A938F90</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuItemTitle</key>
@@ -208,7 +169,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>0D08BC3A-C663-4CCF-B844-BCFCDFE81D26</string>
+				<string>2C0FE28F-FB09-4364-B42A-CE822A938F90</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuItemTitle</key>
@@ -244,7 +205,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>0D08BC3A-C663-4CCF-B844-BCFCDFE81D26</string>
+				<string>2C0FE28F-FB09-4364-B42A-CE822A938F90</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuItemTitle</key>
@@ -263,7 +224,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>0D08BC3A-C663-4CCF-B844-BCFCDFE81D26</string>
+				<string>2C0FE28F-FB09-4364-B42A-CE822A938F90</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -274,7 +235,46 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>FEB07824-2ADB-4C4B-817C-10E51B18FF4A</string>
+				<string>2E58990A-BD21-4CA2-8B6B-7CA80DA67BC3</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>CoercionItemClass</key>
+								<string>WFStringContentItem</string>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+							</dict>
+						</array>
+						<key>Type</key>
+						<string>ExtensionInput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>shared_url</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>2E58990A-BD21-4CA2-8B6B-7CA80DA67BC3</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -285,7 +285,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>A67B8310-EFF0-4AC6-991D-D9C1DDE9AE90</string>
+				<string>34DEA6E4-0126-4627-ACCE-1AE2B7244E9B</string>
 				<key>WFBase64LineBreakMode</key>
 				<string>None</string>
 				<key>WFInput</key>
@@ -317,7 +317,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>C2AFC3AE-569E-4F2F-8907-9475666AF6CE</string>
+				<string>19E8A1E4-98F3-43EB-854C-20064F416826</string>
 				<key>WFURLActionURL</key>
 				<dict>
 					<key>Value</key>
@@ -329,7 +329,7 @@
 								<key>OutputName</key>
 								<string>Đã mã hóa Base64</string>
 								<key>OutputUUID</key>
-								<string>A67B8310-EFF0-4AC6-991D-D9C1DDE9AE90</string>
+								<string>34DEA6E4-0126-4627-ACCE-1AE2B7244E9B</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -352,7 +352,7 @@
 				<key>ShowHeaders</key>
 				<false/>
 				<key>UUID</key>
-				<string>20A08687-D917-4718-B89D-FB1688E4F863</string>
+				<string>13F4CDB0-5A38-4927-B4BB-6B7F225A6B83</string>
 				<key>WFHTTPHeaders</key>
 				<dict>
 					<key>Value</key>
@@ -410,7 +410,7 @@
 								<key>OutputName</key>
 								<string>URL</string>
 								<key>OutputUUID</key>
-								<string>C2AFC3AE-569E-4F2F-8907-9475666AF6CE</string>
+								<string>19E8A1E4-98F3-43EB-854C-20064F416826</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -429,7 +429,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>FE8D42C7-2D85-4773-971C-7640EDBF9054</string>
+				<string>1323C0DE-0D52-4EEF-ACE3-7328EF11441F</string>
 				<key>WFCondition</key>
 				<integer>4</integer>
 				<key>WFConditionalActionString</key>
@@ -536,7 +536,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>FE8D42C7-2D85-4773-971C-7640EDBF9054</string>
+				<string>1323C0DE-0D52-4EEF-ACE3-7328EF11441F</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -585,7 +585,7 @@
 				<key>CustomOutputName</key>
 				<string>selected</string>
 				<key>UUID</key>
-				<string>7A0A13FA-7B36-4029-A400-D0EAEE76426E</string>
+				<string>84D6472C-2FA2-4AF7-8C78-9E15FCD536A6</string>
 				<key>WFChooseFromListActionPrompt</key>
 				<dict>
 					<key>Value</key>
@@ -666,7 +666,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>E16B8573-BA93-40E3-9594-5AF8F23BAB21</string>
+				<string>B3CE5950-5C9B-40E0-9B22-7178717AC76C</string>
 				<key>WFCondition</key>
 				<integer>101</integer>
 				<key>WFControlFlowMode</key>
@@ -682,7 +682,7 @@
 							<key>OutputName</key>
 							<string>selected</string>
 							<key>OutputUUID</key>
-							<string>7A0A13FA-7B36-4029-A400-D0EAEE76426E</string>
+							<string>84D6472C-2FA2-4AF7-8C78-9E15FCD536A6</string>
 							<key>Type</key>
 							<string>ActionOutput</string>
 						</dict>
@@ -704,7 +704,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>E16B8573-BA93-40E3-9594-5AF8F23BAB21</string>
+				<string>B3CE5950-5C9B-40E0-9B22-7178717AC76C</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -715,7 +715,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>26714686-B92E-4340-BF8F-C3FF374926A0</string>
+				<string>42DDFC8C-C9E2-4152-BB34-ABBF2603B33B</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFInput</key>
@@ -725,7 +725,7 @@
 						<key>OutputName</key>
 						<string>selected</string>
 						<key>OutputUUID</key>
-						<string>7A0A13FA-7B36-4029-A400-D0EAEE76426E</string>
+						<string>84D6472C-2FA2-4AF7-8C78-9E15FCD536A6</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -763,7 +763,7 @@
 				<key>CustomOutputName</key>
 				<string>media_url</string>
 				<key>UUID</key>
-				<string>70C0BC45-D21A-45DF-98A4-517CEBE29F08</string>
+				<string>1FAC0862-E7D2-4F7D-B86D-128D4EB336F1</string>
 				<key>WFDictionaryKey</key>
 				<dict>
 					<key>Value</key>
@@ -808,7 +808,7 @@
 				<key>ShowHeaders</key>
 				<false/>
 				<key>UUID</key>
-				<string>3F8DA3E7-B042-49BD-8664-1784AB8E5666</string>
+				<string>5AD28FD0-1CAA-413C-B467-1F2034D8D8E1</string>
 				<key>WFHTTPHeaders</key>
 				<dict>
 					<key>Value</key>
@@ -866,7 +866,7 @@
 								<key>OutputName</key>
 								<string>media_url</string>
 								<key>OutputUUID</key>
-								<string>70C0BC45-D21A-45DF-98A4-517CEBE29F08</string>
+								<string>1FAC0862-E7D2-4F7D-B86D-128D4EB336F1</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -885,7 +885,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>BD20293D-DBA6-459D-A145-41ADCC7181F8</string>
+				<string>B70C9847-65B7-4C4D-B9FE-842D4AE6A1B3</string>
 				<key>WFCondition</key>
 				<integer>99</integer>
 				<key>WFConditionalActionString</key>
@@ -936,7 +936,7 @@
 						<key>OutputName</key>
 						<string>media_file</string>
 						<key>OutputUUID</key>
-						<string>3F8DA3E7-B042-49BD-8664-1784AB8E5666</string>
+						<string>5AD28FD0-1CAA-413C-B467-1F2034D8D8E1</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -951,7 +951,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>BD20293D-DBA6-459D-A145-41ADCC7181F8</string>
+				<string>B70C9847-65B7-4C4D-B9FE-842D4AE6A1B3</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -970,7 +970,7 @@
 						<key>OutputName</key>
 						<string>media_file</string>
 						<key>OutputUUID</key>
-						<string>3F8DA3E7-B042-49BD-8664-1784AB8E5666</string>
+						<string>5AD28FD0-1CAA-413C-B467-1F2034D8D8E1</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -985,7 +985,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>BD20293D-DBA6-459D-A145-41ADCC7181F8</string>
+				<string>B70C9847-65B7-4C4D-B9FE-842D4AE6A1B3</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -996,7 +996,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>26714686-B92E-4340-BF8F-C3FF374926A0</string>
+				<string>42DDFC8C-C9E2-4152-BB34-ABBF2603B33B</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>

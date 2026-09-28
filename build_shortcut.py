@@ -92,26 +92,21 @@ def build_workflow(shortcut_name="SnapAll"):
     # PHASE 1: LẤY URL (Share Sheet hoặc nhập tay)
     # =========================================================================
 
-    # [0] Set shared_url = ExtensionInput as String
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
-        "WFWorkflowActionParameters": {
-            "WFVariableName": "shared_url",
-            "WFInput": {
-                "Value": {"Type": "ExtensionInput", "Aggrandizements": [agg_str()]},
-                "WFSerializationType": "WFTextTokenAttachment"
-            }
-        }
-    })
-
-    # [1] IF shared_url has NO value → hiện menu
+    # [0] IF ExtensionInput has NO value (chạy trực tiếp, không qua Share Sheet)
+    # Check ExtensionInput TRỰC TIẾP - không qua biến trung gian để tránh mất giá trị
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {
             "GroupingIdentifier": g_no_input,
             "WFControlFlowMode": 0,
             "WFCondition": 101,   # Does not have a value
-            "WFInput": {"Type": "Variable", "Variable": var_ref("shared_url", [agg_str()])}
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": {
+                    "Value": {"Type": "ExtensionInput"},
+                    "WFSerializationType": "WFTextTokenAttachment"
+                }
+            }
         }
     })
 
@@ -196,6 +191,23 @@ def build_workflow(shortcut_name="SnapAll"):
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
         "WFWorkflowActionParameters": {"GroupingIdentifier": g_menu, "WFControlFlowMode": 2}
+    })
+
+    # [14b] ELSE: có ExtensionInput từ Share Sheet → set shared_url
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {"GroupingIdentifier": g_no_input, "WFControlFlowMode": 1}
+    })
+    # [14c] Set shared_url = ExtensionInput (coerce to String)
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "shared_url",
+            "WFInput": {
+                "Value": {"Type": "ExtensionInput", "Aggrandizements": [agg_str()]},
+                "WFSerializationType": "WFTextTokenAttachment"
+            }
+        }
     })
 
     # [15] END IF no_input
