@@ -739,13 +739,13 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [54] IF Updated Text is not empty ───────────────────────────────────
+    # ─── [54] IF Updated Text has any value (is not empty) ─────────────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {
             "GroupingIdentifier": g_open_url2b,
             "WFControlFlowMode": 0,
-            "WFCondition": 5,
+            "WFCondition": 100,   # Has Any Value (is not empty) - KHÔNG phải 5 (IsNot)
             "WFInput": {
                 "Type": "Variable",
                 "Variable": act_out(_u_replaced, "Updated Text")
@@ -753,11 +753,18 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [55] Open URL ────────────────────────────────────────────────────────
+    # ─── [55] Open URL (WFURL là key đúng cho openurl, không phải WFInput) ────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
         "WFWorkflowActionParameters": {
-            "WFInput": act_out(_u_replaced, "Updated Text")
+            "WFURL": tok("￼", {
+                "{0, 1}": {
+                    "OutputUUID": _u_replaced,
+                    "OutputName": "Updated Text",
+                    "Type": "ActionOutput",
+                    "Aggrandizements": [agg_url()]
+                }
+            })
         }
     })
 
@@ -776,15 +783,13 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionParameters": {"GroupingIdentifier": g_open_url2, "WFControlFlowMode": 2}
     })
 
-    # ─── [59] IF fetch_result (from loop download) is not empty ─────────────
-    # Snap Video gốc: dùng trực tiếp fetch_result từ action [12] downloadurl
-    # (không có gettext/downloadurl riêng cho media - chính fetch_result đã là file media)
+    # ─── [59] IF fetch_result has any value (is not empty) ───────────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {
             "GroupingIdentifier": g_has_fetch,
             "WFControlFlowMode": 0,
-            "WFCondition": 5,   # is not empty
+            "WFCondition": 100,   # Has Any Value - KHÔNG phải 5 (IsNot)
             "WFInput": {"Type": "Variable", "Variable": act_out(u_fetch_result, "fetch_result")}
         }
     })
