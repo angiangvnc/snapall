@@ -420,19 +420,8 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [15] RunWorkflow (self) với input = fetch_result["reload"] ───────────
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.runworkflow",
-        "WFWorkflowActionParameters": {
-            "UUID": u_rw1,
-            "WFWorkflowName": shortcut_name,
-            "WFWorkflow": {
-                "workflowName": shortcut_name,
-                "isSelf": True
-            },
-            "WFInput": act_out(u_fetch_result, "fetch_result", agg_dict_key("reload"))
-        }
-    })
+    # ─── [15] Exit (thay runworkflow isSelf - iOS không hỗ trợ shortcut tự gọi khi mới cài)
+    A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
 
     # ─── [16] Exit ───────────────────────────────────────────────────────────
     A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
@@ -689,16 +678,8 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [41] END IF → RunWorkflow (self) với gettext result ─────────────────
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.runworkflow",
-        "WFWorkflowActionParameters": {
-            "UUID": u_rw2,
-            "WFWorkflowName": shortcut_name,
-            "WFWorkflow": {"workflowName": shortcut_name, "isSelf": True},
-            "WFInput": act_out(u_gettext_openurl, "Văn bản")
-        }
-    })
+    # ─── [41] Exit (thay runworkflow isSelf - open-url)
+    A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
 
     # ─── [42] Exit ───────────────────────────────────────────────────────────
     A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
@@ -761,16 +742,8 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [48] RunWorkflow (self) với gettext result ───────────────────────────
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.runworkflow",
-        "WFWorkflowActionParameters": {
-            "UUID": u_rw3,
-            "WFWorkflowName": shortcut_name,
-            "WFWorkflow": {"workflowName": shortcut_name, "isSelf": True},
-            "WFInput": act_out(u_gettext_ask, "Văn bản")
-        }
-    })
+    # ─── [48] Exit (thay runworkflow isSelf - ask mode)
+    A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
 
     # ─── [49] Exit ───────────────────────────────────────────────────────────
     A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})

@@ -23,7 +23,7 @@ API: https://snapall.vercel.app/api/parse</string>
 				<key>CustomOutputName</key>
 				<string>setting</string>
 				<key>UUID</key>
-				<string>8BE1734A-ADB8-497F-AC83-E3E402B4C8E3</string>
+				<string>A8CED395-D30C-44A8-B91D-B2C8576E37BF</string>
 				<key>WFItems</key>
 				<dict>
 					<key>Value</key>
@@ -100,7 +100,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>1C77E522-845F-4B86-BB61-E4A8A315A13B</string>
+				<string>021C1801-6694-4A17-BCFC-F99A5D0A7A28</string>
 				<key>WFBase64LineBreakMode</key>
 				<string>None</string>
 				<key>WFInput</key>
@@ -130,7 +130,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>648A01FB-C920-49A0-AFD5-C5367C8161ED</string>
+				<string>4A3D6F09-7FD9-457E-B809-515EBDA4D15E</string>
 				<key>WFURLActionURL</key>
 				<dict>
 					<key>Value</key>
@@ -142,7 +142,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>Đã mã hóa Base64</string>
 								<key>OutputUUID</key>
-								<string>1C77E522-845F-4B86-BB61-E4A8A315A13B</string>
+								<string>021C1801-6694-4A17-BCFC-F99A5D0A7A28</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -151,7 +151,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>setting</string>
 								<key>OutputUUID</key>
-								<string>8BE1734A-ADB8-497F-AC83-E3E402B4C8E3</string>
+								<string>A8CED395-D30C-44A8-B91D-B2C8576E37BF</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -170,7 +170,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>81A51876-0F24-4C00-B9D9-5C74E14379C4</string>
+				<string>3E3518D0-083B-475A-AF28-5B19CFCF097A</string>
 				<key>WFEncodeMode</key>
 				<string>Decode</string>
 				<key>WFInput</key>
@@ -193,7 +193,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>URL</string>
 								<key>OutputUUID</key>
-								<string>648A01FB-C920-49A0-AFD5-C5367C8161ED</string>
+								<string>4A3D6F09-7FD9-457E-B809-515EBDA4D15E</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -227,7 +227,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>Văn bản URL đã giải mã</string>
 						<key>OutputUUID</key>
-						<string>81A51876-0F24-4C00-B9D9-5C74E14379C4</string>
+						<string>3E3518D0-083B-475A-AF28-5B19CFCF097A</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -244,7 +244,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>05297512-B768-4758-92C0-32C1314B5D76</string>
+				<string>F2A3F3C5-5067-42FE-8E87-8D1A4FFB5E8D</string>
 				<key>WFURLActionURL</key>
 				<dict>
 					<key>Value</key>
@@ -376,7 +376,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>572DDF5C-9247-43F4-B5CA-0A55192216F9</string>
+				<string>D108FE76-D939-4BCA-9F76-8BD35A5F5B2B</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -384,7 +384,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>URL</string>
 						<key>OutputUUID</key>
-						<string>05297512-B768-4758-92C0-32C1314B5D76</string>
+						<string>F2A3F3C5-5067-42FE-8E87-8D1A4FFB5E8D</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -401,7 +401,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>96C65381-6602-4C1A-811C-098D5C4412BC</string>
+				<string>E67D52FF-4440-4761-96E6-25D3CC3C1B94</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFRepeatCount</key>
@@ -414,7 +414,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>08B4AE73-67E6-4F5A-80B6-8E6DEA4C5DEF</string>
+				<string>749EB7CC-A3C5-4C16-9664-F5AC476251AD</string>
 				<key>WFBase64LineBreakMode</key>
 				<string>None</string>
 				<key>WFInput</key>
@@ -446,7 +446,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>F36C5926-8547-454B-A45C-0E4886257BF4</string>
+				<string>6349B02C-D186-4A79-9273-8E8FB62DAE7F</string>
 				<key>WFURLActionURL</key>
 				<dict>
 					<key>Value</key>
@@ -480,7 +480,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>Đã mã hóa Base64</string>
 								<key>OutputUUID</key>
-								<string>08B4AE73-67E6-4F5A-80B6-8E6DEA4C5DEF</string>
+								<string>749EB7CC-A3C5-4C16-9664-F5AC476251AD</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -503,7 +503,7 @@ API: https://snapall.vercel.app/api/parse</string>
 				<key>ShowHeaders</key>
 				<false/>
 				<key>UUID</key>
-				<string>8701BBB5-A019-4DC2-91D3-1FEADA5EF3B2</string>
+				<string>7823E750-7CE4-4EA2-9436-124E09E7EE5E</string>
 				<key>WFHTTPHeaders</key>
 				<dict>
 					<key>Value</key>
@@ -550,7 +550,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>URL</string>
 								<key>OutputUUID</key>
-								<string>F36C5926-8547-454B-A45C-0E4886257BF4</string>
+								<string>6349B02C-D186-4A79-9273-8E8FB62DAE7F</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -569,7 +569,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>93D060AC-8058-4E01-B93C-134DE535ECF7</string>
+				<string>33BC11F8-BE4F-4C3F-AF5F-6B2189547F74</string>
 				<key>WFCondition</key>
 				<integer>4</integer>
 				<key>WFConditionalActionString</key>
@@ -604,7 +604,7 @@ API: https://snapall.vercel.app/api/parse</string>
 							<key>OutputName</key>
 							<string>fetch_result</string>
 							<key>OutputUUID</key>
-							<string>8701BBB5-A019-4DC2-91D3-1FEADA5EF3B2</string>
+							<string>7823E750-7CE4-4EA2-9436-124E09E7EE5E</string>
 							<key>Type</key>
 							<string>ActionOutput</string>
 						</dict>
@@ -620,7 +620,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6E9A1272-5324-436B-BAE3-9FDBCD5B0202</string>
+				<string>A0654847-59CF-40C6-94D3-878CEB9A2208</string>
 				<key>WFCondition</key>
 				<integer>100</integer>
 				<key>WFControlFlowMode</key>
@@ -651,7 +651,7 @@ API: https://snapall.vercel.app/api/parse</string>
 							<key>OutputName</key>
 							<string>fetch_result</string>
 							<key>OutputUUID</key>
-							<string>8701BBB5-A019-4DC2-91D3-1FEADA5EF3B2</string>
+							<string>7823E750-7CE4-4EA2-9436-124E09E7EE5E</string>
 							<key>Type</key>
 							<string>ActionOutput</string>
 						</dict>
@@ -663,50 +663,9 @@ API: https://snapall.vercel.app/api/parse</string>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.runworkflow</string>
+			<string>is.workflow.actions.exit</string>
 			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>1787DC0E-E585-47C9-9407-AA13DD3393B3</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>Aggrandizements</key>
-						<array>
-							<dict>
-								<key>CoercionItemClass</key>
-								<string>WFDictionaryContentItem</string>
-								<key>Type</key>
-								<string>WFCoercionVariableAggrandizement</string>
-							</dict>
-							<dict>
-								<key>DictionaryKey</key>
-								<string>reload</string>
-								<key>Type</key>
-								<string>WFDictionaryValueVariableAggrandizement</string>
-							</dict>
-						</array>
-						<key>OutputName</key>
-						<string>fetch_result</string>
-						<key>OutputUUID</key>
-						<string>8701BBB5-A019-4DC2-91D3-1FEADA5EF3B2</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFWorkflow</key>
-				<dict>
-					<key>isSelf</key>
-					<true/>
-					<key>workflowName</key>
-					<string>SnapAll</string>
-				</dict>
-				<key>WFWorkflowName</key>
-				<string>SnapAll</string>
-			</dict>
+			<dict/>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
@@ -720,7 +679,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6E9A1272-5324-436B-BAE3-9FDBCD5B0202</string>
+				<string>A0654847-59CF-40C6-94D3-878CEB9A2208</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -731,7 +690,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>93D060AC-8058-4E01-B93C-134DE535ECF7</string>
+				<string>33BC11F8-BE4F-4C3F-AF5F-6B2189547F74</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -742,7 +701,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6BA0C104-8C5F-4C0E-949F-463FC7114A38</string>
+				<string>F1BA24C3-A39F-4EB7-94AB-1A54BEBC9155</string>
 				<key>WFCondition</key>
 				<integer>4</integer>
 				<key>WFControlFlowMode</key>
@@ -780,7 +739,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>fetch_result</string>
 						<key>OutputUUID</key>
-						<string>8701BBB5-A019-4DC2-91D3-1FEADA5EF3B2</string>
+						<string>7823E750-7CE4-4EA2-9436-124E09E7EE5E</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -797,7 +756,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>E81FF409-6F19-4A62-99C2-522A9D55D45F</string>
+				<string>0DD3C367-B86A-4BA9-A6F8-5641663A6280</string>
 				<key>WFCondition</key>
 				<integer>100</integer>
 				<key>WFControlFlowMode</key>
@@ -878,7 +837,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>E81FF409-6F19-4A62-99C2-522A9D55D45F</string>
+				<string>0DD3C367-B86A-4BA9-A6F8-5641663A6280</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -889,9 +848,9 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>9B532BE6-22AD-48CC-A27A-937713B9A6EC</string>
+				<string>6154D15B-E8C1-4400-98F5-0E0C9909E41B</string>
 				<key>UUID</key>
-				<string>045A02E5-276E-4107-B918-5B35620FA3F8</string>
+				<string>1910C685-22F2-49A7-A843-67A77577C858</string>
 				<key>WFCondition</key>
 				<integer>100</integer>
 				<key>WFControlFlowMode</key>
@@ -961,7 +920,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>fetch_result</string>
 								<key>OutputUUID</key>
-								<string>8701BBB5-A019-4DC2-91D3-1FEADA5EF3B2</string>
+								<string>7823E750-7CE4-4EA2-9436-124E09E7EE5E</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -1011,7 +970,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>9B532BE6-22AD-48CC-A27A-937713B9A6EC</string>
+				<string>6154D15B-E8C1-4400-98F5-0E0C9909E41B</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -1047,7 +1006,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>fetch_result</string>
 								<key>OutputUUID</key>
-								<string>8701BBB5-A019-4DC2-91D3-1FEADA5EF3B2</string>
+								<string>7823E750-7CE4-4EA2-9436-124E09E7EE5E</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -1095,9 +1054,9 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>9B532BE6-22AD-48CC-A27A-937713B9A6EC</string>
+				<string>6154D15B-E8C1-4400-98F5-0E0C9909E41B</string>
 				<key>UUID</key>
-				<string>3AAD5BF7-F9F4-4A77-AD47-15178E6B3BC0</string>
+				<string>2BC78D64-AC2A-40D0-9C09-34A562A90552</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -1108,9 +1067,9 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>E81FF409-6F19-4A62-99C2-522A9D55D45F</string>
+				<string>0DD3C367-B86A-4BA9-A6F8-5641663A6280</string>
 				<key>UUID</key>
-				<string>897E65B1-17C5-46AD-BA25-D29BBDD2F038</string>
+				<string>79333C2F-2359-428A-A136-B3D03785BBF9</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -1127,7 +1086,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>Nếu kết quả</string>
 						<key>OutputUUID</key>
-						<string>897E65B1-17C5-46AD-BA25-D29BBDD2F038</string>
+						<string>79333C2F-2359-428A-A136-B3D03785BBF9</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -1144,9 +1103,9 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6BA0C104-8C5F-4C0E-949F-463FC7114A38</string>
+				<string>F1BA24C3-A39F-4EB7-94AB-1A54BEBC9155</string>
 				<key>UUID</key>
-				<string>53C187B9-2CC5-443E-89C1-6CB4D3E10B9E</string>
+				<string>F2DF032E-C6CA-4501-83A1-455183D098AF</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -1163,7 +1122,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>Mục từ danh sách</string>
 						<key>OutputUUID</key>
-						<string>53C187B9-2CC5-443E-89C1-6CB4D3E10B9E</string>
+						<string>F2DF032E-C6CA-4501-83A1-455183D098AF</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -1194,7 +1153,7 @@ API: https://snapall.vercel.app/api/parse</string>
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>UUID</key>
-				<string>4DC350A5-B786-4242-94CE-45AEFB19D5F1</string>
+				<string>6E3AFE2E-461D-4BB5-84DD-F1046DA09CBD</string>
 				<key>WFCountType</key>
 				<string>Items</string>
 			</dict>
@@ -1205,7 +1164,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>30719020-5121-4A3A-A79B-CA3B0B935D70</string>
+				<string>85366A96-AE2A-40CE-9B40-893CF71B7D7D</string>
 				<key>WFCondition</key>
 				<integer>1</integer>
 				<key>WFControlFlowMode</key>
@@ -1234,7 +1193,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>count_select</string>
 						<key>OutputUUID</key>
-						<string>4DC350A5-B786-4242-94CE-45AEFB19D5F1</string>
+						<string>6E3AFE2E-461D-4BB5-84DD-F1046DA09CBD</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -1251,7 +1210,7 @@ API: https://snapall.vercel.app/api/parse</string>
 				<key>CustomOutputName</key>
 				<string>Mục từ danh sách</string>
 				<key>UUID</key>
-				<string>16F8C9D6-AB84-4548-9D7C-679116D6D9A7</string>
+				<string>38EF557D-6256-4C5F-96E6-2EC0F67D23D0</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -1288,7 +1247,7 @@ API: https://snapall.vercel.app/api/parse</string>
 				<key>CustomOutputName</key>
 				<string>url_media</string>
 				<key>UUID</key>
-				<string>ED5FCA17-0109-470C-A1A8-86C0B5C95AC7</string>
+				<string>02058994-4AE9-4651-82CF-0E30CD65EDBC</string>
 				<key>WFDictionaryKey</key>
 				<dict>
 					<key>Value</key>
@@ -1350,7 +1309,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>url_media</string>
 						<key>OutputUUID</key>
-						<string>ED5FCA17-0109-470C-A1A8-86C0B5C95AC7</string>
+						<string>02058994-4AE9-4651-82CF-0E30CD65EDBC</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -1367,7 +1326,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>30719020-5121-4A3A-A79B-CA3B0B935D70</string>
+				<string>85366A96-AE2A-40CE-9B40-893CF71B7D7D</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -1378,7 +1337,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6711275A-D000-480D-8C27-CF942B71A211</string>
+				<string>29D46D6A-7A3F-4AC9-9129-0573ED9E3652</string>
 				<key>WFCondition</key>
 				<integer>100</integer>
 				<key>WFControlFlowMode</key>
@@ -1408,7 +1367,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>95943773-A4C9-4640-8EFD-AF0D93CDBB8A</string>
+				<string>BFB2E316-3D46-4FEC-921B-31DF7CF448B8</string>
 				<key>WFCondition</key>
 				<integer>99</integer>
 				<key>WFConditionalActionString</key>
@@ -1440,7 +1399,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>21C0BF8B-9370-4D5A-AB1C-0A6930755591</string>
+				<string>21D7DB10-2513-44C0-8245-C57B0B925BC6</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -1465,35 +1424,9 @@ API: https://snapall.vercel.app/api/parse</string>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.runworkflow</string>
+			<string>is.workflow.actions.exit</string>
 			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>673FB68A-1181-414A-A9C8-84E4C47884AA</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputName</key>
-						<string>Văn bản</string>
-						<key>OutputUUID</key>
-						<string>21C0BF8B-9370-4D5A-AB1C-0A6930755591</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFWorkflow</key>
-				<dict>
-					<key>isSelf</key>
-					<true/>
-					<key>workflowName</key>
-					<string>SnapAll</string>
-				</dict>
-				<key>WFWorkflowName</key>
-				<string>SnapAll</string>
-			</dict>
+			<dict/>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
@@ -1507,7 +1440,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>95943773-A4C9-4640-8EFD-AF0D93CDBB8A</string>
+				<string>BFB2E316-3D46-4FEC-921B-31DF7CF448B8</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -1518,7 +1451,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6711275A-D000-480D-8C27-CF942B71A211</string>
+				<string>29D46D6A-7A3F-4AC9-9129-0573ED9E3652</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -1529,7 +1462,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>5271654E-F933-4D43-BB96-94CF26375B98</string>
+				<string>BDAC6B71-6BB6-4269-93FC-D741099C387B</string>
 				<key>WFCondition</key>
 				<integer>99</integer>
 				<key>WFConditionalActionString</key>
@@ -1556,7 +1489,7 @@ API: https://snapall.vercel.app/api/parse</string>
 							<key>OutputName</key>
 							<string>Mục từ danh sách</string>
 							<key>OutputUUID</key>
-							<string>16F8C9D6-AB84-4548-9D7C-679116D6D9A7</string>
+							<string>38EF557D-6256-4C5F-96E6-2EC0F67D23D0</string>
 							<key>Type</key>
 							<string>ActionOutput</string>
 						</dict>
@@ -1572,7 +1505,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>FD675FBF-28DE-44F1-A3C5-D2C51DE2DC31</string>
+				<string>8FCCFF7F-A83E-42E5-9A0D-06C69436532B</string>
 				<key>WFAllowsMultilineText</key>
 				<true/>
 				<key>WFAskActionDefaultAnswer</key>
@@ -1621,7 +1554,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>64D3AC47-541C-4FF8-B3D2-D9374512F5C2</string>
+				<string>9673D0E8-6122-4C8D-8D75-F026D9FEF302</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -1638,7 +1571,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>Đầu vào đã cung cấp</string>
 								<key>OutputUUID</key>
-								<string>FD675FBF-28DE-44F1-A3C5-D2C51DE2DC31</string>
+								<string>8FCCFF7F-A83E-42E5-9A0D-06C69436532B</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -1653,35 +1586,9 @@ API: https://snapall.vercel.app/api/parse</string>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.runworkflow</string>
+			<string>is.workflow.actions.exit</string>
 			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>7791C551-5879-4345-A980-82F2EE721125</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputName</key>
-						<string>Văn bản</string>
-						<key>OutputUUID</key>
-						<string>64D3AC47-541C-4FF8-B3D2-D9374512F5C2</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFWorkflow</key>
-				<dict>
-					<key>isSelf</key>
-					<true/>
-					<key>workflowName</key>
-					<string>SnapAll</string>
-				</dict>
-				<key>WFWorkflowName</key>
-				<string>SnapAll</string>
-			</dict>
+			<dict/>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
@@ -1695,7 +1602,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>5271654E-F933-4D43-BB96-94CF26375B98</string>
+				<string>BDAC6B71-6BB6-4269-93FC-D741099C387B</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -1706,7 +1613,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6711275A-D000-480D-8C27-CF942B71A211</string>
+				<string>29D46D6A-7A3F-4AC9-9129-0573ED9E3652</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -1717,7 +1624,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>F958C323-86CC-445F-95A3-244A669BEB2F</string>
+				<string>4CBB5C56-48AF-432F-80B2-DA2E1529F4FB</string>
 				<key>WFCondition</key>
 				<integer>99</integer>
 				<key>WFConditionalActionString</key>
@@ -1751,7 +1658,7 @@ API: https://snapall.vercel.app/api/parse</string>
 				<key>CustomOutputName</key>
 				<string>Updated Text</string>
 				<key>UUID</key>
-				<string>BC50907A-65AA-4AF5-A187-7002CA90566C</string>
+				<string>0C0D35B2-A772-4815-A14B-BDD89D9C7BDA</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -1776,7 +1683,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>BBAB7903-F4F6-4793-8CD9-EA63E38D528A</string>
+				<string>8C9A4C53-84A8-4805-AA8A-FD7E068D354E</string>
 				<key>WFCondition</key>
 				<integer>5</integer>
 				<key>WFControlFlowMode</key>
@@ -1792,7 +1699,7 @@ API: https://snapall.vercel.app/api/parse</string>
 							<key>OutputName</key>
 							<string>Updated Text</string>
 							<key>OutputUUID</key>
-							<string>BC50907A-65AA-4AF5-A187-7002CA90566C</string>
+							<string>0C0D35B2-A772-4815-A14B-BDD89D9C7BDA</string>
 							<key>Type</key>
 							<string>ActionOutput</string>
 						</dict>
@@ -1814,7 +1721,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>Updated Text</string>
 						<key>OutputUUID</key>
-						<string>BC50907A-65AA-4AF5-A187-7002CA90566C</string>
+						<string>0C0D35B2-A772-4815-A14B-BDD89D9C7BDA</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -1829,7 +1736,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>BBAB7903-F4F6-4793-8CD9-EA63E38D528A</string>
+				<string>8C9A4C53-84A8-4805-AA8A-FD7E068D354E</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -1846,7 +1753,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>F958C323-86CC-445F-95A3-244A669BEB2F</string>
+				<string>4CBB5C56-48AF-432F-80B2-DA2E1529F4FB</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -1857,7 +1764,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>167F174C-DAD2-4AF6-89E7-0EEB05C00367</string>
+				<string>3F28DB54-7593-4C4D-BBAC-B847C11AACCC</string>
 				<key>WFCondition</key>
 				<integer>5</integer>
 				<key>WFControlFlowMode</key>
@@ -1873,7 +1780,7 @@ API: https://snapall.vercel.app/api/parse</string>
 							<key>OutputName</key>
 							<string>fetch_result</string>
 							<key>OutputUUID</key>
-							<string>8701BBB5-A019-4DC2-91D3-1FEADA5EF3B2</string>
+							<string>7823E750-7CE4-4EA2-9436-124E09E7EE5E</string>
 							<key>Type</key>
 							<string>ActionOutput</string>
 						</dict>
@@ -1889,7 +1796,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>661672B6-1DC0-4637-BAB5-FC63B65B7AF2</string>
+				<string>051E8A7F-01FB-4CF4-BC66-29FFDAF46D80</string>
 				<key>WFMatchTextCaseSensitive</key>
 				<false/>
 				<key>WFMatchTextPattern</key>
@@ -1924,7 +1831,7 @@ API: https://snapall.vercel.app/api/parse</string>
 				<key>CustomOutputName</key>
 				<string>ext</string>
 				<key>UUID</key>
-				<string>C02CE701-5430-4B34-9EFB-7899C046BC02</string>
+				<string>175592FA-7E88-4EBB-BF84-68644049CEFE</string>
 				<key>WFCaseType</key>
 				<string>lowercase</string>
 				<key>text</key>
@@ -1934,7 +1841,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>Kết quả</string>
 						<key>OutputUUID</key>
-						<string>661672B6-1DC0-4637-BAB5-FC63B65B7AF2</string>
+						<string>051E8A7F-01FB-4CF4-BC66-29FFDAF46D80</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -1949,7 +1856,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>C86CBB5C-8395-4D34-B4AF-853BE81DA1F1</string>
+				<string>40A37AE4-C34E-4B98-ADA8-27DA8EADF1E8</string>
 				<key>WFRandomNumberMaximum</key>
 				<string>9999999</string>
 				<key>WFRandomNumberMinimum</key>
@@ -1964,7 +1871,7 @@ API: https://snapall.vercel.app/api/parse</string>
 				<key>CustomOutputName</key>
 				<string>media_loaded</string>
 				<key>UUID</key>
-				<string>32605F6D-90DA-44CE-BFE1-E0E3143D2D52</string>
+				<string>0E1A71A7-4E35-411A-9181-F2C3B74B7AC1</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -1972,7 +1879,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>fetch_result</string>
 						<key>OutputUUID</key>
-						<string>98D87ABA-A559-4055-93A0-672D05F91CF5</string>
+						<string>2ECA4390-91E7-4BDF-B240-3BEAFB70B9C3</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -1990,7 +1897,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>Số ngẫu nhiên</string>
 								<key>OutputUUID</key>
-								<string>C86CBB5C-8395-4D34-B4AF-853BE81DA1F1</string>
+								<string>40A37AE4-C34E-4B98-ADA8-27DA8EADF1E8</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -1999,7 +1906,7 @@ API: https://snapall.vercel.app/api/parse</string>
 								<key>OutputName</key>
 								<string>ext</string>
 								<key>OutputUUID</key>
-								<string>C02CE701-5430-4B34-9EFB-7899C046BC02</string>
+								<string>175592FA-7E88-4EBB-BF84-68644049CEFE</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -2040,7 +1947,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DD9020C4-C083-4CA2-A2A5-953AB02F137B</string>
+				<string>4B49CE8A-BF59-4D89-A64B-AE334E5174F4</string>
 				<key>WFCondition</key>
 				<integer>99</integer>
 				<key>WFConditionalActionString</key>
@@ -2081,7 +1988,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>62A43656-9EC8-4F66-924A-232897B96930</string>
+				<string>EC9C2EAB-92E6-4DEA-A569-000D11BE09EF</string>
 				<key>WFAskWhereToSave</key>
 				<false/>
 				<key>WFFolder</key>
@@ -2098,7 +2005,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>media_loaded</string>
 						<key>OutputUUID</key>
-						<string>32605F6D-90DA-44CE-BFE1-E0E3143D2D52</string>
+						<string>0E1A71A7-4E35-411A-9181-F2C3B74B7AC1</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -2149,7 +2056,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DD9020C4-C083-4CA2-A2A5-953AB02F137B</string>
+				<string>4B49CE8A-BF59-4D89-A64B-AE334E5174F4</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -2160,7 +2067,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>A98C7428-6097-4ED2-8240-E49346E914B5</string>
+				<string>6CE4F503-8EF2-4079-8AEA-A75A66A1CDDA</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -2168,7 +2075,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>media_loaded</string>
 						<key>OutputUUID</key>
-						<string>32605F6D-90DA-44CE-BFE1-E0E3143D2D52</string>
+						<string>0E1A71A7-4E35-411A-9181-F2C3B74B7AC1</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -2219,7 +2126,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DD9020C4-C083-4CA2-A2A5-953AB02F137B</string>
+				<string>4B49CE8A-BF59-4D89-A64B-AE334E5174F4</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -2230,7 +2137,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>167F174C-DAD2-4AF6-89E7-0EEB05C00367</string>
+				<string>3F28DB54-7593-4C4D-BBAC-B847C11AACCC</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -2241,9 +2148,9 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>22798D7E-D131-47D9-88EB-1D3FD08CB23C</string>
+				<string>FA1CA88A-136B-4FAE-BB49-E16277EB92D2</string>
 				<key>UUID</key>
-				<string>32304B60-D42D-4A90-8A1F-48A5BF2F090E</string>
+				<string>7D4FF76C-A740-4F45-8DBA-A4057B429A37</string>
 				<key>WFCondition</key>
 				<integer>2</integer>
 				<key>WFControlFlowMode</key>
@@ -2272,7 +2179,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>count_select</string>
 						<key>OutputUUID</key>
-						<string>4DC350A5-B786-4242-94CE-45AEFB19D5F1</string>
+						<string>6E3AFE2E-461D-4BB5-84DD-F1046DA09CBD</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -2367,7 +2274,7 @@ API: https://snapall.vercel.app/api/parse</string>
 				<key>CustomOutputName</key>
 				<string>menu_done_select</string>
 				<key>UUID</key>
-				<string>97257846-5779-416C-877A-264E1BEE8D29</string>
+				<string>78203391-ED5D-4BE7-98E9-63F0C0C6EE41</string>
 				<key>WFChooseFromListActionPrompt</key>
 				<dict>
 					<key>Value</key>
@@ -2425,9 +2332,9 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>B6A22E09-76A4-4A0C-A626-164C098760E4</string>
+				<string>949EC2FF-3214-4514-8BB5-2A46223B08C6</string>
 				<key>UUID</key>
-				<string>7F252DCA-F9F0-491B-AA1B-FE9A51C867AE</string>
+				<string>D3ED2F56-F9D8-4618-99DD-2A3D9768DCC0</string>
 				<key>WFCondition</key>
 				<integer>4</integer>
 				<key>WFConditionalActionString</key>
@@ -2487,7 +2394,7 @@ API: https://snapall.vercel.app/api/parse</string>
 							<key>OutputName</key>
 							<string>menu_done_select</string>
 							<key>OutputUUID</key>
-							<string>97257846-5779-416C-877A-264E1BEE8D29</string>
+							<string>78203391-ED5D-4BE7-98E9-63F0C0C6EE41</string>
 							<key>Type</key>
 							<string>ActionOutput</string>
 						</dict>
@@ -2521,7 +2428,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>B6A22E09-76A4-4A0C-A626-164C098760E4</string>
+				<string>949EC2FF-3214-4514-8BB5-2A46223B08C6</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -2532,9 +2439,9 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>A7534523-0A75-417F-9A3F-D7FDD2D81E21</string>
+				<string>B5DD30EC-BD73-4C07-A299-6805028D6D63</string>
 				<key>UUID</key>
-				<string>0FCBADB9-E595-4C45-830D-47737D7D3DC9</string>
+				<string>F8D6F764-3B07-43A5-8C87-DAFFB006E5EC</string>
 				<key>WFCondition</key>
 				<integer>4</integer>
 				<key>WFConditionalActionString</key>
@@ -2594,7 +2501,7 @@ API: https://snapall.vercel.app/api/parse</string>
 							<key>OutputName</key>
 							<string>menu_done_select</string>
 							<key>OutputUUID</key>
-							<string>97257846-5779-416C-877A-264E1BEE8D29</string>
+							<string>78203391-ED5D-4BE7-98E9-63F0C0C6EE41</string>
 							<key>Type</key>
 							<string>ActionOutput</string>
 						</dict>
@@ -2616,7 +2523,7 @@ API: https://snapall.vercel.app/api/parse</string>
 						<key>OutputName</key>
 						<string>Tệp đã lưu</string>
 						<key>OutputUUID</key>
-						<string>62A43656-9EC8-4F66-924A-232897B96930</string>
+						<string>EC9C2EAB-92E6-4DEA-A569-000D11BE09EF</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -2635,7 +2542,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>A7534523-0A75-417F-9A3F-D7FDD2D81E21</string>
+				<string>B5DD30EC-BD73-4C07-A299-6805028D6D63</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -2652,7 +2559,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>22798D7E-D131-47D9-88EB-1D3FD08CB23C</string>
+				<string>FA1CA88A-136B-4FAE-BB49-E16277EB92D2</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -2663,7 +2570,7 @@ API: https://snapall.vercel.app/api/parse</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>96C65381-6602-4C1A-811C-098D5C4412BC</string>
+				<string>E67D52FF-4440-4761-96E6-25D3CC3C1B94</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
