@@ -21,9 +21,9 @@ Cách hoạt động (giống hệt Snap Video):
      e. IF Repeat Index == 1 (lần đầu) → parse API response → chọn định dạng
      f. Get item từ selected_item theo Repeat Index → label_now
      g. IF Repeat < count → get url_media → set url_fetch
-     h. IF url_fetch has value AND contains {{open-url}} → open URL + exit
+     h. IF url_fetch has value AND contains [open-url] → open URL + exit
      i. IF url_fetch has value ELSE → IF contains "💬" → Ask + RunWorkflow(self) + exit
-     j. IF url_fetch contains {{open-url}} → Replace + open URL + exit
+     j. IF url_fetch contains [open-url] → Replace + open URL + exit
      k. IF fetch_result has value → match ext → random → setitemname
      l. IF audio → save Documents; ELSE → save Photos
      m. IF Repeat > count → menu xong (appendvariable → choosefromlist → openapp/openin)
@@ -655,19 +655,19 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [39] IF url_fetch contains {{open-url}} ─────────────────────────────
+    # ─── [39] IF url_fetch contains [open-url] ─────────────────────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {
             "GroupingIdentifier": g_open_url1,
             "WFControlFlowMode": 0,
             "WFCondition": 99,
-            "WFConditionalActionString": "{{open-url}}",
+            "WFConditionalActionString": "[open-url]",
             "WFInput": {"Type": "Variable", "Variable": var_ref("url_fetch")}
         }
     })
 
-    # ─── [40] IF url_fetch contains {{open-url}} → gettext ───────────────────
+    # ─── [40] IF url_fetch contains [open-url] → gettext ───────────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
         "WFWorkflowActionParameters": {
@@ -760,26 +760,26 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionParameters": {"GroupingIdentifier": g_has_url_fetch, "WFControlFlowMode": 2}
     })
 
-    # ─── [52] IF url_fetch contains {{open-url}} (lần 2) ────────────────────
+    # ─── [52] IF url_fetch contains [open-url] (lần 2) ────────────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {
             "GroupingIdentifier": g_open_url2,
             "WFControlFlowMode": 0,
             "WFCondition": 99,
-            "WFConditionalActionString": "{{open-url}}",
+            "WFConditionalActionString": "[open-url]",
             "WFInput": {"Type": "Variable", "Variable": var_ref("url_fetch")}
         }
     })
 
-    # ─── [53] Replace {{open-url}} với "" ────────────────────────────────────
+    # ─── [53] Replace [open-url] với "" ────────────────────────────────────
     _u_replaced = uid()
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.text.replace",
         "WFWorkflowActionParameters": {
             "UUID": _u_replaced,
             "CustomOutputName": "Updated Text",
-            "WFReplaceTextFind": "{{open-url}}",
+            "WFReplaceTextFind": "[open-url]",
             "WFReplaceTextReplace": "",
             "WFInput": var_ref("url_fetch")
         }
@@ -816,7 +816,7 @@ def build_workflow(shortcut_name="SnapAll"):
     # ─── [57] Exit ───────────────────────────────────────────────────────────
     A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
 
-    # ─── [58] END IF {{open-url}} lần 2 ─────────────────────────────────────
+    # ─── [58] END IF [open-url] lần 2 ─────────────────────────────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {"GroupingIdentifier": g_open_url2, "WFControlFlowMode": 2}
