@@ -72,8 +72,8 @@ export default async function handler(req, res) {
       menu_title: menu_title || `⚡️ Chọn định dạng (${title}):`,
       labels,
       medias,
-      select_multiple: true,
-      skip_select: false,
+      select_multiple: 'true',    // string 'true' → iOS Shortcuts đọc đúng
+      skip_select: '',             // empty = hiện menu; 'true' = bỏ qua menu (tự chọn hết)
       open_album: '📸 Mở Album Ảnh',
       open_file: '📁 Mở ứng dụng Tệp',
       close: '❌ Đóng',

@@ -413,14 +413,16 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [21] IF api_result["skip_select"] has value ─────────────────────────
+    # ─── [21] IF api_result["skip_select"] == "true" (bỏ qua menu - tự chọn hết) ──
+    # Dùng == "true" chính xác, KHÔNG dùng HasAnyValue (100) vì "false" cũng là "has value"!
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {
             "GroupingIdentifier": g_skip_select,
             "WFControlFlowMode": 0,
-            "WFCondition": 100,
-            "WFInput": {"Type": "Variable", "Variable": var_ref("api_result", agg_dict_key("skip_select"))}
+            "WFCondition": 4,   # Is equal to "true"
+            "WFConditionalActionString": "true",
+            "WFInput": {"Type": "Variable", "Variable": var_ref("api_result", [agg_dict(), agg_dict_key("skip_select"), agg_str()])}
         }
     })
 
