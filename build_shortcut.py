@@ -617,7 +617,7 @@ def build_workflow(shortcut_name="SnapAll"):
             "WFControlFlowMode": 0,
             "WFCondition": 99,
             "WFConditionalActionString": "[open-url]",
-            "WFInput": {"Type": "Variable", "Variable": var_ref("url_fetch")}
+            "WFInput": {"Type": "Variable", "Variable": var_ref("url_fetch", [agg_str()])}
         }
     })
 
@@ -722,7 +722,7 @@ def build_workflow(shortcut_name="SnapAll"):
             "WFControlFlowMode": 0,
             "WFCondition": 99,
             "WFConditionalActionString": "[open-url]",
-            "WFInput": {"Type": "Variable", "Variable": var_ref("url_fetch")}
+            "WFInput": {"Type": "Variable", "Variable": var_ref("url_fetch", [agg_str()])}
         }
     })
 
