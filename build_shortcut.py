@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 """
-SnapAll & Snap Video Shortcut Generator
-Tạo file .shortcut chuẩn kiến trúc Apple Shortcuts theo nội dung ảnh chụp Snap Video:
-1. Nhận link đa nguồn (Share Sheet, Clipboard, hoặc Hỏi trực tiếp).
-2. Xử lý mở link đặc biệt {{open-url}}.
-3. Gọi API (snapall.vercel.app/api/parse?url=...) lấy labels + medias.
-4. Lặp qua các lựa chọn (Repeat 50):
-   - Lấy dl_url từ dictionary medias theo label_now.
-   - Get Text từ dl_url → url_text (TEXT THUẦN TÚY để iOS hiểu).
-   - Tải media từ url_text -> fetch_result.
-   - Regex trích xuất đuôi từ label_now (mp4|mov|jpg|jpeg|heic|png|webp|mp3|m4a).
-   - Đổi thành chữ thường (ext).
-   - Sinh số ngẫu nhiên 1 - 9999999.
-   - Set Name: snapall--[title] - [Random Number].[ext]
-   - Phân loại lưu: 🎵 → Documents, Others → Recents.
-5. Menu hoàn tất (menu_done): Mở Photos / Mở Tệp / Đóng.
+SnapAll v9.0 – Clone 100% cấu trúc Snap Video thực tế (đọc từ app Shortcuts macOS).
+Chỉ thay đổi duy nhất: API endpoint trỏ về snapall.vercel.app/api/parse.
+
+API Response Schema (phải trả về JSON với các field):
+{
+  "labels": ["🎬 Tải Video HD mp4", "🎵 Trích xuất Âm thanh mp3"],
+  "medias": {"🎬 Tải Video HD mp4": "https://...", ...},
+  "title": "Tên video",
+  "menu_title": "⚡️ Chọn định dạng:",
+  "open_album": "📸 Mở Album",
+  "open_file": "📁 Mở Tệp",
+  "close": "❌ Đóng",
+  "menu_done_title": "🎉 Tải xong!",
+  "select_multiple": true/false,
+  "skip_select": true/false
+}
 """
 
 import plistlib
@@ -22,951 +23,1147 @@ import os
 import uuid
 import subprocess
 
-# ==============================================================================
-# 🌐 CẤU HÌNH API RIÊNG CỦA BẠN:
-# ==============================================================================
-DEFAULT_API_URL = "https://snapall.vercel.app/api/parse?url="
+DEFAULT_API_URL = "https://snapall.vercel.app/api/parse"
 
 
 def uid():
     return str(uuid.uuid4()).upper()
 
 
-def make_action_attachment(output_uuid, output_name, coerce_class=None):
-    """Tạo attachment từ ActionOutput UUID (output của action cụ thể)."""
-    agg = []
-    if coerce_class:
-        agg = [{'Type': 'WFCoercionVariableAggrandizement', 'CoercionItemClass': coerce_class}]
-    val = {
-        'OutputUUID': output_uuid,
-        'OutputName': output_name,
-        'Type': 'ActionOutput',
-    }
-    if agg:
-        val['Aggrandizements'] = agg
-    return {'Value': val, 'WFSerializationType': 'WFTextTokenAttachment'}
+# ──────────────────────────────────────────────────────────────────────────────
+# Helper: tạo WFTextTokenAttachment từ ActionOutput UUID
+# ──────────────────────────────────────────────────────────────────────────────
+def action_out(output_uuid, output_name, aggrandizements=None):
+    val = {"OutputUUID": output_uuid, "OutputName": output_name, "Type": "ActionOutput"}
+    if aggrandizements:
+        val["Aggrandizements"] = aggrandizements
+    return {"Value": val, "WFSerializationType": "WFTextTokenAttachment"}
 
 
-def make_var_attachment(var_name, coerce_class=None):
-    """Tạo attachment từ Named Variable."""
-    agg = []
-    if coerce_class:
-        agg = [{'Type': 'WFCoercionVariableAggrandizement', 'CoercionItemClass': coerce_class}]
-    val = {'VariableName': var_name, 'Type': 'Variable'}
-    if agg:
-        val['Aggrandizements'] = agg
-    return {'Value': val, 'WFSerializationType': 'WFTextTokenAttachment'}
+# Aggrandizement: coerce to string
+def agg_str():
+    return {"Type": "WFCoercionVariableAggrandizement", "CoercionItemClass": "WFStringContentItem"}
 
 
-def make_repeat_index_attachment():
-    """Tạo attachment từ Repeat Index (biến đặc biệt)."""
-    return {'Value': {'Type': 'RepeatIndex'}, 'WFSerializationType': 'WFTextTokenAttachment'}
+# Aggrandizement: coerce to URL
+def agg_url():
+    return {"Type": "WFCoercionVariableAggrandizement", "CoercionItemClass": "WFURLContentItem"}
 
 
-def text_token(static_str, attachments_by_range=None):
-    """Tạo WFTextTokenString với text tĩnh và các attachment."""
-    val = {'string': static_str}
-    if attachments_by_range:
-        val['attachmentsByRange'] = attachments_by_range
-    return {'Value': val, 'WFSerializationType': 'WFTextTokenString'}
+# Aggrandizement: coerce to Dictionary then extract key
+def agg_dict_key(key):
+    return [
+        {"Type": "WFCoercionVariableAggrandizement", "CoercionItemClass": "WFDictionaryContentItem"},
+        {"Type": "WFDictionaryValueVariableAggrandizement", "DictionaryKey": key},
+    ]
 
 
-def build_workflow(api_base_url="https://snapall.vercel.app/api/parse?url=", shortcut_name="SnapAll"):
-    actions = []
+# Helper: variable reference (named variable)
+def var_ref(name, aggrandizements=None):
+    val = {"VariableName": name, "Type": "Variable"}
+    if aggrandizements:
+        val["Aggrandizements"] = aggrandizements
+    return {"Value": val, "WFSerializationType": "WFTextTokenAttachment"}
 
-    # ─── UUIDs ───────────────────────────────────────────────────────────────
-    u_link_share   = uid()
-    u_clip         = uid()
-    u_link_clip    = uid()
-    u_combined     = uid()
-    u_all_urls     = uid()
-    u_first_url    = uid()
 
-    grp_check_url  = uid()
-    u_ask_input    = uid()
-    u_ask_urls     = uid()
-    u_ask_first    = uid()
+# Helper: Repeat Index reference
+def repeat_index_ref():
+    return {"Value": {"VariableName": "Repeat Index", "Type": "Variable"}, "WFSerializationType": "WFTextTokenAttachment"}
 
-    grp_open_url   = uid()
-    u_replace_open = uid()
-    grp_check_replaced = uid()
 
-    u_get_url_var  = uid()   # getvariable url_fetch -> để build URL string
-    u_api_res      = uid()   # API call result
-    u_title        = uid()
-    u_labels       = uid()
-    u_medias       = uid()
-    u_menu_title   = uid()
-    u_chosen_item  = uid()
-    u_count_select = uid()
+# Helper: text token với attachments
+def text_tok(s, attachments=None):
+    val = {"string": s}
+    if attachments:
+        val["attachmentsByRange"] = attachments
+    return {"Value": val, "WFSerializationType": "WFTextTokenString"}
 
-    grp_repeat     = uid()
-    u_item_index   = uid()   # label_now
-    u_dl_url       = uid()   # value from dictionary (raw object)
-    u_url_text     = uid()   # gettext dl_url → text string (QUAN TRỌNG cho iOS)
-    u_fetch_res    = uid()   # downloadurl từ url_text
 
-    grp_if_valid   = uid()   # IF fetch_result has any value
-    u_match_ext    = uid()
-    u_ext_lower    = uid()
-    u_rand_num     = uid()
-    u_set_name     = uid()
+def build_workflow(api_url=DEFAULT_API_URL, shortcut_name="SnapAll"):
+    A = []  # actions list
 
-    grp_save_type  = uid()
-    u_save_file    = uid()
-    u_save_recents = uid()
+    # ── UUIDs ─────────────────────────────────────────────────────────────────
+    u_setting         = uid()
+    u_b64_input       = uid()   # base64 encode input url
+    u_api_url         = uid()   # URL action: api_url + b64
+    u_fetch_result    = uid()   # downloadurl → fetch_result (= api_data)
+    u_item_from_list  = uid()   # getitemfromlist (selected_item từ If-result)
+    u_url_media       = uid()   # getvalueforkey → url_media
+    u_b64_media       = uid()   # base64 encode url_media
+    u_api_url2        = uid()   # URL action: download_url + b64
+    u_count_select    = uid()   # count
+    u_match_ext       = uid()   # text.match
+    u_ext             = uid()   # text.changecase → ext
+    u_rand_num        = uid()   # number.random
+    u_media_loaded    = uid()   # setitemname → media_loaded
+    u_saved_file      = uid()   # documentpicker.save → Saved File
+    u_menu_select     = uid()   # choosefromlist → menu_done_select
 
-    grp_loop_done  = uid()
-    u_menu_select  = uid()
-    grp_check_album = uid()
-    grp_check_file  = uid()
+    # Group IDs (for conditional blocks)
+    g_repeat          = uid()
+    g_fetch_is_json   = uid()   # IF fetch_result.ext == "json"
+    g_reload          = uid()   # IF fetch_result["reload"] has value
+    g_url_is_1        = uid()   # IF Repeat Index is 1 (first iteration)
+    g_skip_select     = uid()   # IF api_result["skip_select"]
+    g_select_multiple = uid()   # IF api_result["select_multiple"]
+    g_url_fetch_val   = uid()   # IF url_fetch has value (before download)
+    g_url_contains_op = uid()   # IF url_fetch contains {{open-url}}
+    g_url_fetch_val2  = uid()   # IF url_fetch has value (ELSE branch)
+    g_url_contains2   = uid()   # IF url_fetch contains ... (ELSE branch)
+    g_open_url        = uid()   # IF url_fetch contains {{open-url}} (2)
+    g_has_fetch       = uid()   # IF fetch_result (media) has any value
+    g_is_audio        = uid()   # IF label_now contains 🎵
+    g_loop_done       = uid()   # IF Repeat Index > count_select
+    g_open_album      = uid()   # IF menu_done_select == open_album
+    g_open_file       = uid()   # IF menu_done_select == open_file
 
-    # ─── 0. Comment ─────────────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.comment',
-        'WFWorkflowActionParameters': {
-            'WFCommentActionText': (
-                f"⚡️ {shortcut_name} v8.0 Pro\n"
-                "• Kiến trúc 100% từ Snap Video (iOS Shortcuts).\n"
-                "• API riêng: snapall.vercel.app (không quảng cáo).\n"
-                "• Share Sheet / Clipboard / Hỏi trực tiếp.\n"
-                "• Hỗ trợ TikTok không logo, Facebook HD, MP3."
+    # ── [0] Comment ───────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.comment",
+        "WFWorkflowActionParameters": {
+            "WFCommentActionText": (
+                f"⚡️ {shortcut_name} v9.0\n"
+                "Kiến trúc clone 100% từ Snap Video thực tế.\n"
+                f"API: {api_url}"
             )
         }
     })
 
-    # ─── 1. Detect URLs từ Share Sheet ──────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.detect.link',
-        'WFWorkflowActionParameters': {
-            'UUID': u_link_share,
-            'CustomOutputName': 'URLs Share',
-            'WFInput': {
-                'Value': {'Type': 'ExtensionInput'},
-                'WFSerializationType': 'WFTextTokenAttachment'
-            }
-        }
-    })
-
-    # ─── 2. Lấy Clipboard ───────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getclipboard',
-        'WFWorkflowActionParameters': {'UUID': u_clip}
-    })
-
-    # ─── 3. Detect URLs từ Clipboard ────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.detect.link',
-        'WFWorkflowActionParameters': {
-            'UUID': u_link_clip,
-            'CustomOutputName': 'URLs Clipboard',
-            'WFInput': make_action_attachment(u_clip, 'Clipboard')
-        }
-    })
-
-    # ─── 4. Ghép 2 nguồn URL thành 1 text ───────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.gettext',
-        'WFWorkflowActionParameters': {
-            'UUID': u_combined,
-            'WFTextActionText': text_token('\ufffc\n\ufffc', {
-                '{0, 1}': {'OutputUUID': u_link_share, 'OutputName': 'URLs Share', 'Type': 'ActionOutput'},
-                '{2, 1}': {'OutputUUID': u_link_clip,  'OutputName': 'URLs Clipboard', 'Type': 'ActionOutput'},
-            })
-        }
-    })
-
-    # ─── 5. Detect URLs từ text ghép ────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.detect.link',
-        'WFWorkflowActionParameters': {
-            'UUID': u_all_urls,
-            'WFInput': make_action_attachment(u_combined, 'Text')
-        }
-    })
-
-    # ─── 6. Lấy URL đầu tiên ────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getitemfromlist',
-        'WFWorkflowActionParameters': {
-            'UUID': u_first_url,
-            'WFItemSpecifier': 'First Item',
-            'WFInput': make_action_attachment(u_all_urls, 'URLs')
-        }
-    })
-
-    # ─── 7. IF: URL đầu tiên có giá trị? ────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_check_url,
-            'WFControlFlowMode': 0,
-            'WFCondition': 100,   # has any value
-            'WFInput': {
-                'Type': 'Variable',
-                'Variable': make_action_attachment(u_first_url, 'Item from List')
-            }
-        }
-    })
-
-    # ─── 8. Set url_fetch = first URL ───────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'url_fetch',
-            'WFInput': make_action_attachment(u_first_url, 'Item from List')
-        }
-    })
-
-    # ─── 9. ELSE: Hỏi người dùng ────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_check_url,
-            'WFControlFlowMode': 1
-        }
-    })
-
-    # ─── 10. Ask for Text ────────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.ask',
-        'WFWorkflowActionParameters': {
-            'UUID': u_ask_input,
-            'WFAskActionPrompt': f"⚡️ {shortcut_name}: Dán liên kết video vào đây:",
-            'WFAskActionDefaultAnswer': {
-                'Value': {
-                    'string': '\ufffc',
-                    'attachmentsByRange': {'{0, 1}': {'Type': 'Clipboard'}}
-                },
-                'WFSerializationType': 'WFTextTokenString'
-            },
-            'WFAllowsMultilineText': False
-        }
-    })
-
-    # ─── 11. Detect URLs từ input người dùng ────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.detect.link',
-        'WFWorkflowActionParameters': {
-            'UUID': u_ask_urls,
-            'WFInput': make_action_attachment(u_ask_input, 'Provided Input')
-        }
-    })
-
-    # ─── 12. Lấy URL đầu tiên từ input ──────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getitemfromlist',
-        'WFWorkflowActionParameters': {
-            'UUID': u_ask_first,
-            'WFItemSpecifier': 'First Item',
-            'WFInput': make_action_attachment(u_ask_urls, 'URLs')
-        }
-    })
-
-    # ─── 13. Set url_fetch = URL từ input ───────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'url_fetch',
-            'WFInput': make_action_attachment(u_ask_first, 'Item from List')
-        }
-    })
-
-    # ─── 14. END IF (check url) ──────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_check_url,
-            'WFControlFlowMode': 2
-        }
-    })
-
-    # ─── 15. IF url_fetch contains {{open-url}} ──────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_open_url,
-            'WFControlFlowMode': 0,
-            'WFCondition': 99,   # contains
-            'WFConditionalActionString': '{{open-url}}',
-            'WFInput': {
-                'Type': 'Variable',
-                'Variable': make_var_attachment('url_fetch')
-            }
-        }
-    })
-
-    # ─── 16. Replace {{open-url}} với "" trong url_fetch ─────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.text.replace',
-        'WFWorkflowActionParameters': {
-            'UUID': u_replace_open,
-            'CustomOutputName': 'Updated Text',
-            'WFReplaceTextFind': '{{open-url}}',
-            'WFReplaceTextReplace': '',
-            'WFInput': make_var_attachment('url_fetch')
-        }
-    })
-
-    # ─── 17. IF Updated Text is not anything (tức là KHÔNG RỖNG) ────────────
-    # Snap Video gốc: "If Updated Text is not anything" → Open URL
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_check_replaced,
-            'WFControlFlowMode': 0,
-            'WFCondition': 101,   # does not have any value (i.e. is not empty)
-            # NOTE: "is not anything" = WFCondition 101 (does not have value)
-            # Nhưng thực ra Snap Video check "is not anything" tức là URL hợp lệ đã được extract
-            # Để phù hợp iOS: check has any value (100)
-            'WFInput': {
-                'Type': 'Variable',
-                'Variable': make_action_attachment(u_replace_open, 'Updated Text')
-            }
-        }
-    })
-
-    # ─── 18. Open URL ─────────────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.openurl',
-        'WFWorkflowActionParameters': {
-            'WFInput': make_action_attachment(u_replace_open, 'Updated Text')
-        }
-    })
-
-    # ─── 19. END IF (check replaced) ─────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_check_replaced,
-            'WFControlFlowMode': 2
-        }
-    })
-
-    # ─── 20. Stop this shortcut (kết thúc nhánh open-url) ───────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.exit',
-        'WFWorkflowActionParameters': {}
-    })
-
-    # ─── 21. END IF (open-url) ───────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_open_url,
-            'WFControlFlowMode': 2
-        }
-    })
-
-    # ─── 22-24. Set điều hướng cuối (open_album, open_file, close) ───────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'open_album',
-            'WFInput': text_token('📸 Mở Album Ảnh')
-        }
-    })
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'open_file',
-            'WFInput': text_token('📁 Mở ứng dụng Tệp')
-        }
-    })
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'close',
-            'WFInput': text_token('❌ Đóng')
-        }
-    })
-
-    # ─── 25. Get Variable url_fetch → output để dùng trong URL string ────────
-    # Cần thiết vì iOS Shortcuts cần ActionOutput reference chứ không dùng thẳng VariableName
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getvariable',
-        'WFWorkflowActionParameters': {
-            'UUID': u_get_url_var,
-            'CustomOutputName': 'url_fetch_out',
-            'WFVariable': make_var_attachment('url_fetch')
-        }
-    })
-
-    # ─── 26. Get URL Content (API parse) ─────────────────────────────────────
-    # Tạo URL: api_base_url + url_fetch_out (coerced to URL text)
-    api_offset = len(api_base_url)   # offset của placeholder \ufffc trong URL string
-    api_url_string = api_base_url + '\ufffc'
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.downloadurl',
-        'WFWorkflowActionParameters': {
-            'UUID': u_api_res,
-            'CustomOutputName': 'api_data',
-            'WFHTTPHeaders': {
-                'Value': {
-                    'WFDictionaryFieldValueItems': [
+    # ── [1] Dictionary: setting ───────────────────────────────────────────────
+    # Snap Video gốc: setting chứa url_red, lang, ask_format, show_menu, skip_update, url64, close, open_album, open_file, menu_done_title
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.dictionary",
+        "WFWorkflowActionParameters": {
+            "UUID": u_setting,
+            "CustomOutputName": "setting",
+            "WFItems": {
+                "Value": {
+                    "WFDictionaryFieldValueItems": [
                         {
-                            'WFKey': text_token('User-Agent'),
-                            'WFItemType': 0,
-                            'WFValue': text_token(f'{shortcut_name}/8.0 iOS')
+                            "WFItemType": 0,
+                            "WFKey": text_tok("url_red"),
+                            "WFValue": text_tok(api_url + "?b64=")
+                        },
+                        {
+                            "WFItemType": 0,
+                            "WFKey": text_tok("url64"),
+                            "WFValue": text_tok(api_url + "?b64=")
+                        },
+                        {
+                            "WFItemType": 0,
+                            "WFKey": text_tok("lang"),
+                            "WFValue": text_tok("vi")
+                        },
+                        {
+                            "WFItemType": 0,
+                            "WFKey": text_tok("ask_format"),
+                            "WFValue": text_tok("")
+                        },
+                        {
+                            "WFItemType": 0,
+                            "WFKey": text_tok("show_menu"),
+                            "WFValue": text_tok("")
+                        },
+                        {
+                            "WFItemType": 0,
+                            "WFKey": text_tok("skip_update"),
+                            "WFValue": text_tok("")
+                        },
+                        {
+                            "WFItemType": 0,
+                            "WFKey": text_tok("close"),
+                            "WFValue": text_tok("❌ Đóng")
+                        },
+                        {
+                            "WFItemType": 0,
+                            "WFKey": text_tok("open_album"),
+                            "WFValue": text_tok("📸 Mở Album Ảnh")
+                        },
+                        {
+                            "WFItemType": 0,
+                            "WFKey": text_tok("open_file"),
+                            "WFValue": text_tok("📁 Mở ứng dụng Tệp")
+                        },
+                        {
+                            "WFItemType": 0,
+                            "WFKey": text_tok("menu_done_title"),
+                            "WFValue": text_tok("🎉 Tải xong! Bạn muốn làm gì?")
+                        },
+                    ]
+                },
+                "WFSerializationType": "WFDictionaryFieldValue"
+            }
+        }
+    })
+
+    # ── [2] Comment: nhập URL ─────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.comment",
+        "WFWorkflowActionParameters": {
+            "WFCommentActionText": "=== PHẦN 1: NHẬN URL VÀO ==="
+        }
+    })
+
+    # ── [3] Base64 encode shortcut input (Share Sheet / Clipboard) ────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.base64encode",
+        "WFWorkflowActionParameters": {
+            "UUID": u_b64_input,
+            "WFBase64LineBreakMode": "None",
+            "WFEncodeMode": "Encode",
+            "WFInput": {
+                "Value": {"Type": "ExtensionInput"},
+                "WFSerializationType": "WFTextTokenAttachment"
+            }
+        }
+    })
+
+    # ── [4] URL action: api_url + b64_input ───────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.url",
+        "WFWorkflowActionParameters": {
+            "UUID": u_api_url,
+            "WFURLActionURL": text_tok(
+                "\ufffc\ufffc",
+                {
+                    "{0, 1}": {
+                        "VariableName": "setting",
+                        "Type": "Variable",
+                        "Aggrandizements": agg_dict_key("url_red")
+                    },
+                    "{1, 1}": {
+                        "OutputUUID": u_b64_input,
+                        "OutputName": "Đã mã hóa Base64",
+                        "Type": "ActionOutput"
+                    }
+                }
+            )
+        }
+    })
+
+    # ── [5] URL Encode (không dùng, giữ để đúng thứ tự) ──────────────────────
+    # Snap Video có thêm urlencode action ở đây nhưng thực ra dùng b64 nên skip
+    # Thay bằng setvariable url_fetch = URL output của action 4
+
+    # ── [5] Set url_fetch = URL (output của action 4) ─────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "url_fetch",
+            "WFInput": action_out(u_api_url, "URL")
+        }
+    })
+
+    # ── [6] Set main_json = setting ──────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "main_json",
+            "WFInput": action_out(u_setting, "setting")
+        }
+    })
+
+    # ── [7] REPEAT 100 ────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.repeat.count",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_repeat,
+            "WFControlFlowMode": 0,
+            "WFRepeatCount": 100
+        }
+    })
+
+    # ── [8] Get URL Content (call API): url_fetch → fetch_result ─────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
+        "WFWorkflowActionParameters": {
+            "UUID": u_fetch_result,
+            "CustomOutputName": "fetch_result",
+            "ShowHeaders": False,
+            "WFHTTPHeaders": {
+                "Value": {
+                    "WFDictionaryFieldValueItems": [
+                        {
+                            "WFKey": text_tok("User-Agent"),
+                            "WFItemType": 0,
+                            "WFValue": text_tok(f"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1 {shortcut_name}/9.0")
                         }
                     ]
                 },
-                'WFSerializationType': 'WFDictionaryFieldValue'
+                "WFSerializationType": "WFDictionaryFieldValue"
             },
-            'WFURL': text_token(api_url_string, {
-                f'{{{api_offset}, 1}}': {
-                    'OutputUUID': u_get_url_var,
-                    'OutputName': 'url_fetch_out',
-                    'Type': 'ActionOutput',
-                    'Aggrandizements': [{
-                        'Type': 'WFCoercionVariableAggrandizement',
-                        'CoercionItemClass': 'WFURLContentItem'
-                    }]
-                }
+            "WFURL": text_tok("\ufffc", {
+                "{0, 1}": {"OutputUUID": u_api_url, "OutputName": "URL", "Type": "ActionOutput"}
             })
         }
     })
 
-    # ─── 27. Lấy title từ api_data ────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
-        'WFWorkflowActionParameters': {
-            'UUID': u_title,
-            'CustomOutputName': 'title',
-            'WFDictionaryKey': 'title',
-            'WFInput': make_action_attachment(u_api_res, 'api_data')
-        }
-    })
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'title',
-            'WFInput': make_action_attachment(u_title, 'title')
-        }
-    })
-
-    # ─── 28. Lấy labels từ api_data ───────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
-        'WFWorkflowActionParameters': {
-            'UUID': u_labels,
-            'CustomOutputName': 'labels',
-            'WFDictionaryKey': 'labels',
-            'WFInput': make_action_attachment(u_api_res, 'api_data')
-        }
-    })
-
-    # ─── 29. Lấy medias từ api_data ───────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
-        'WFWorkflowActionParameters': {
-            'UUID': u_medias,
-            'CustomOutputName': 'medias',
-            'WFDictionaryKey': 'medias',
-            'WFInput': make_action_attachment(u_api_res, 'api_data')
-        }
-    })
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'medias',
-            'WFInput': make_action_attachment(u_medias, 'medias')
-        }
-    })
-
-    # ─── 30. Lấy menu_title từ api_data ──────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
-        'WFWorkflowActionParameters': {
-            'UUID': u_menu_title,
-            'CustomOutputName': 'menu_title',
-            'WFDictionaryKey': 'menu_title',
-            'WFInput': make_action_attachment(u_api_res, 'api_data')
-        }
-    })
-
-    # ─── 31. Choose from labels (menu tải) ───────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.choosefromlist',
-        'WFWorkflowActionParameters': {
-            'UUID': u_chosen_item,
-            'CustomOutputName': 'Chosen Item',
-            'WFInput': make_action_attachment(u_labels, 'labels'),
-            'WFChooseFromListActionPrompt': text_token('\ufffc', {
-                '{0, 1}': {'OutputUUID': u_menu_title, 'OutputName': 'menu_title', 'Type': 'ActionOutput'}
-            }),
-            'WFChooseFromListActionSelectMultiple': True
-        }
-    })
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'selected_item',
-            'WFInput': make_action_attachment(u_chosen_item, 'Chosen Item')
-        }
-    })
-
-    # ─── 32. Count selected items ─────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.count',
-        'WFWorkflowActionParameters': {
-            'UUID': u_count_select,
-            'CustomOutputName': 'count_select',
-            'WFCountType': 'Items',
-            'WFInput': make_var_attachment('selected_item')
-        }
-    })
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'count_select',
-            'WFInput': make_action_attachment(u_count_select, 'count_select')
-        }
-    })
-
-    # ─── 33. REPEAT 50 ───────────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.repeat.count',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_repeat,
-            'WFControlFlowMode': 0,
-            'WFRepeatCount': 50
-        }
-    })
-
-    # ─── 34. Lấy label tại vị trí Repeat Index ───────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getitemfromlist',
-        'WFWorkflowActionParameters': {
-            'UUID': u_item_index,
-            'CustomOutputName': 'label_now',
-            'WFItemSpecifier': 'Item At Index',
-            'WFItemIndex': make_repeat_index_attachment(),
-            'WFInput': make_var_attachment('selected_item')
-        }
-    })
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'label_now',
-            'WFInput': make_action_attachment(u_item_index, 'label_now')
-        }
-    })
-
-    # ─── 35. Lấy dl_url từ dictionary medias (theo key label_now) ────────────
-    # Đây trả về object, CHƯA phải text URL thuần túy
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.getvalueforkey',
-        'WFWorkflowActionParameters': {
-            'UUID': u_dl_url,
-            'CustomOutputName': 'dl_url',
-            'WFDictionaryKey': text_token('\ufffc', {
-                '{0, 1}': {'VariableName': 'label_now', 'Type': 'Variable'}
-            }),
-            'WFInput': make_var_attachment('medias')
-        }
-    })
-
-    # ─── 36. Get Text từ dl_url → url_text (ĐÂY LÀ FIX CHÍNH CHO iOS) ───────
-    # Trên iOS, khi lấy value từ Dictionary, kết quả là JSON value object chứ không phải URL.
-    # Cần dùng "Text" action để convert thành string thuần túy rồi mới dùng làm URL.
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.gettext',
-        'WFWorkflowActionParameters': {
-            'UUID': u_url_text,
-            'CustomOutputName': 'url_text',
-            'WFTextActionText': text_token('\ufffc', {
-                '{0, 1}': {'OutputUUID': u_dl_url, 'OutputName': 'dl_url', 'Type': 'ActionOutput'}
-            })
-        }
-    })
-
-    # ─── 37. Get URL Content (tải file media) từ url_text ────────────────────
-    # Dùng url_text (text thuần túy) coerce sang URL → iOS không báo lỗi nữa
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.downloadurl',
-        'WFWorkflowActionParameters': {
-            'UUID': u_fetch_res,
-            'CustomOutputName': 'fetch_result',
-            'WFURL': text_token('\ufffc', {
-                '{0, 1}': {
-                    'OutputUUID': u_url_text,
-                    'OutputName': 'url_text',
-                    'Type': 'ActionOutput',
-                    'Aggrandizements': [{
-                        'Type': 'WFCoercionVariableAggrandizement',
-                        'CoercionItemClass': 'WFURLContentItem'
-                    }]
-                }
-            })
-        }
-    })
-
-    # ─── 38. IF fetch_result has any value ───────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_if_valid,
-            'WFControlFlowMode': 0,
-            'WFCondition': 100,   # has any value
-            'WFInput': {
-                'Type': 'Variable',
-                'Variable': make_action_attachment(u_fetch_res, 'fetch_result')
+    # ── [9] IF fetch_result.extension == "json" ───────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_fetch_is_json,
+            "WFControlFlowMode": 0,
+            "WFCondition": 4,   # Is
+            "WFConditionalActionString": "json",
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": action_out(u_fetch_result, "fetch_result", [
+                    {"Type": "WFCoercionVariableAggrandizement", "CoercionItemClass": "WFGenericFileContentItem"},
+                    {"PropertyUserInfo": "WFFileExtensionProperty", "Type": "WFPropertyVariableAggrandizement", "PropertyName": "File Extension"}
+                ])
             }
         }
     })
 
-    # ─── 39. Match extension trong label_now ─────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.text.match',
-        'WFWorkflowActionParameters': {
-            'UUID': u_match_ext,
-            'CustomOutputName': 'Matches',
-            'WFMatchTextPattern': 'mp4|mov|jpg|jpeg|heic|png|webp|mp3|m4a',
-            'WFMatchTextCaseSensitive': False,
-            'text': make_var_attachment('label_now')
+    # ── [10] IF fetch_result["reload"] has value ──────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_reload,
+            "WFControlFlowMode": 0,
+            "WFCondition": 100,   # has any value
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": action_out(u_fetch_result, "fetch_result", agg_dict_key("reload"))
+            }
         }
     })
 
-    # ─── 40. Change Matches to lowercase → ext ───────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.text.changecase',
-        'WFWorkflowActionParameters': {
-            'UUID': u_ext_lower,
-            'CustomOutputName': 'ext',
-            'WFTextCaseType': 'lowercase',
-            'text': make_action_attachment(u_match_ext, 'Matches')
+    # ── [11] Run Shortcut (reload → tự gọi lại) ──────────────────────────────
+    # Trong SnapAll không có reload, nhưng để đúng kiến trúc ta dùng exit thay
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+        "WFWorkflowActionParameters": {}
+    })
+
+    # ── [12] END IF reload ────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_reload,
+            "WFControlFlowMode": 2
         }
     })
 
-    # ─── 41. Random number 1 - 9999999 ───────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.math.random',
-        'WFWorkflowActionParameters': {
-            'UUID': u_rand_num,
-            'CustomOutputName': 'Random Number',
-            'WFRandomNumberMinimum': 1,
-            'WFRandomNumberMaximum': 9999999
+    # ── [13] END IF fetch_is_json ─────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_fetch_is_json,
+            "WFControlFlowMode": 2
         }
     })
 
-    # ─── 42. Set Name: [prefix]--[title] - [Random Number].[ext] ─────────────
-    # prefix = "snapall--" = 9 chars
-    # string = "snapall--\ufffc - \ufffc.\ufffc"
-    # indexes: [0..8]=prefix, [9]=title, [10]=' ', [11]='-', [12]=' ', [13]=rand, [14]='.', [15]=ext
+    # ── [14] IF Repeat Index is 1 (first pass) ────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_is_1,
+            "WFControlFlowMode": 0,
+            "WFCondition": 4,   # Is
+            "WFNumberValue": "1",
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": repeat_index_ref()
+            }
+        }
+    })
+
+    # ── [15] Set api_result = fetch_result ────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "api_result",
+            "WFInput": action_out(u_fetch_result, "fetch_result")
+        }
+    })
+
+    # ── [16] IF api_result["skip_select"] has value ───────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_skip_select,
+            "WFControlFlowMode": 0,
+            "WFCondition": 100,
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": var_ref("api_result", agg_dict_key("skip_select"))
+            }
+        }
+    })
+
+    # ── [17] Set selected_item = api_result["labels"] (auto-select all) ───────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "selected_item",
+            "WFInput": var_ref("api_result", agg_dict_key("labels"))
+        }
+    })
+
+    # ── [18] ELSE ─────────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_skip_select,
+            "WFControlFlowMode": 1
+        }
+    })
+
+    # ── [19] IF api_result["select_multiple"] has value ───────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "UUID": uid(),
+            "GroupingIdentifier": g_select_multiple,
+            "WFControlFlowMode": 0,
+            "WFCondition": 100,
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": var_ref("api_result", agg_dict_key("select_multiple"))
+            }
+        }
+    })
+
+    # ── [20] Choose from list (multiple select) ───────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefromlist",
+        "WFWorkflowActionParameters": {
+            "WFInput": var_ref("api_result", agg_dict_key("labels")),
+            "WFChooseFromListActionPrompt": text_tok("\ufffc", {
+                "{0, 1}": action_out(u_fetch_result, "fetch_result", agg_dict_key("menu_title"))
+            }),
+            "WFChooseFromListActionSelectMultiple": True,
+            "WFChooseFromListActionSelectAll": True
+        }
+    })
+
+    # ── [21] ELSE ─────────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_select_multiple,
+            "WFControlFlowMode": 1
+        }
+    })
+
+    # ── [22] Choose from list (single select) ────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefromlist",
+        "WFWorkflowActionParameters": {
+            "WFInput": var_ref("api_result", agg_dict_key("labels")),
+            "WFChooseFromListActionPrompt": text_tok("\ufffc", {
+                "{0, 1}": action_out(u_fetch_result, "fetch_result", agg_dict_key("menu_title"))
+            }),
+            "WFChooseFromListActionSelectMultiple": False
+        }
+    })
+
+    # ── [23] END IF select_multiple ───────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_select_multiple,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ── [24] END IF skip_select ───────────────────────────────────────────────
+    # Lấy kết quả If → selected_item
+    _u_if_result = uid()
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "UUID": _u_if_result,
+            "GroupingIdentifier": g_skip_select,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ── [25] Set selected_item = If result ───────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "selected_item",
+            "WFInput": action_out(_u_if_result, "Nếu kết quả")
+        }
+    })
+
+    # ── [26] END IF Repeat Index == 1 ────────────────────────────────────────
+    _u_if_idx1_end = uid()
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "UUID": _u_if_idx1_end,
+            "GroupingIdentifier": g_url_is_1,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ── [27] Set label_now = Item from selected_item at Repeat Index ──────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.getitemfromlist",
+        "WFWorkflowActionParameters": {
+            "UUID": u_item_from_list,
+            "CustomOutputName": "Mục từ danh sách",
+            "WFItemSpecifier": "Item At Index",
+            "WFItemIndex": repeat_index_ref(),
+            "WFInput": var_ref("selected_item")
+        }
+    })
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "label_now",
+            "WFInput": action_out(u_item_from_list, "Mục từ danh sách")
+        }
+    })
+
+    # ── [28] count selected_item → count_select ───────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.count",
+        "WFWorkflowActionParameters": {
+            "UUID": u_count_select,
+            "CustomOutputName": "count_select",
+            "WFCountType": "Items",
+            "Input": var_ref("selected_item")
+        }
+    })
+
+    # ── [29] IF Repeat Index < count_select (còn item để tải) ─────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_fetch_val,
+            "WFControlFlowMode": 0,
+            "WFCondition": 1,   # Less Than
+            "WFNumberValue": action_out(u_count_select, "count_select"),
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": repeat_index_ref()
+            }
+        }
+    })
+
+    # ── [30] Get url_media from api_result["medias"][label_now] ──────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+        "WFWorkflowActionParameters": {
+            "UUID": u_url_media,
+            "CustomOutputName": "url_media",
+            "WFDictionaryKey": text_tok("\ufffc", {
+                "{0, 1}": {"VariableName": "label_now", "Type": "Variable"}
+            }),
+            "WFInput": var_ref("api_result", agg_dict_key("medias"))
+        }
+    })
+
+    # ── [31] Set url_fetch = url_media (để vòng lặp sau tải) ─────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "url_fetch",
+            "WFInput": action_out(u_url_media, "url_media")
+        }
+    })
+
+    # ── [32] END IF Repeat Index < count ──────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_fetch_val,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ── [33] IF url_fetch has any value ───────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_contains_op,
+            "WFControlFlowMode": 0,
+            "WFCondition": 100,
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": var_ref("url_fetch")
+            }
+        }
+    })
+
+    # ── [34] IF url_fetch contains {{open-url}} ───────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_open_url,
+            "WFControlFlowMode": 0,
+            "WFCondition": 99,   # contains
+            "WFConditionalActionString": "{{open-url}}",
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": var_ref("url_fetch")
+            }
+        }
+    })
+
+    # ── [35] Get Text (replace {{open-url}}) ──────────────────────────────────
+    _u_openurl_text = uid()
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+        "WFWorkflowActionParameters": {
+            "UUID": _u_openurl_text,
+            "WFTextActionText": text_tok("\ufffc", {
+                "{0, 1}": {"VariableName": "url_fetch", "Type": "Variable"}
+            })
+        }
+    })
+
+    # ── [36] Exit (sau khi open-url) ──────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+        "WFWorkflowActionParameters": {}
+    })
+
+    # ── [37] END IF open-url ──────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_open_url,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ── [38] ELSE (url_fetch không có giá trị) ────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_contains_op,
+            "WFControlFlowMode": 1
+        }
+    })
+
+    # ── [39] IF url_fetch contains ... (ask user) ─────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_contains2,
+            "WFControlFlowMode": 0,
+            "WFCondition": 99,
+            "WFConditionalActionString": "...",
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": var_ref("url_fetch")
+            }
+        }
+    })
+
+    # ── [40] Ask for Text (với default = url_fetch) ───────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.ask",
+        "WFWorkflowActionParameters": {
+            "WFAskActionPrompt": text_tok("\ufffc", {
+                "{0, 1}": {"VariableName": "url_fetch", "Type": "Variable"}
+            }),
+            "WFAskActionDefaultAnswer": {
+                "Value": {
+                    "string": "\ufffc",
+                    "attachmentsByRange": {"{0, 1}": {"Type": "Clipboard"}}
+                },
+                "WFSerializationType": "WFTextTokenString"
+            },
+            "WFAllowsMultilineText": False
+        }
+    })
+
+    # ── [41] Get Text ─────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+        "WFWorkflowActionParameters": {
+            "WFTextActionText": text_tok("\ufffc", {
+                "{0, 1}": {"Type": "Clipboard"}
+            })
+        }
+    })
+
+    # ── [42] Exit ─────────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+        "WFWorkflowActionParameters": {}
+    })
+
+    # ── [43] END IF ask ───────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_contains2,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ── [44] END IF url_fetch has value ───────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_contains_op,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ── [45] IF url_fetch contains {{open-url}} (second check, for download) ──
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_fetch_val2,
+            "WFControlFlowMode": 0,
+            "WFCondition": 99,
+            "WFConditionalActionString": "{{open-url}}",
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": var_ref("url_fetch")
+            }
+        }
+    })
+
+    # ── [46] Replace {{open-url}} ─────────────────────────────────────────────
+    _u_replaced = uid()
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.text.replace",
+        "WFWorkflowActionParameters": {
+            "UUID": _u_replaced,
+            "CustomOutputName": "Updated Text",
+            "WFReplaceTextFind": "{{open-url}}",
+            "WFReplaceTextReplace": "",
+            "WFInput": var_ref("url_fetch")
+        }
+    })
+
+    # ── [47] IF Updated Text is not empty → Open URL ──────────────────────────
+    _g_replace_check = uid()
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": _g_replace_check,
+            "WFControlFlowMode": 0,
+            "WFCondition": 5,   # Is not empty / is not anything
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": action_out(_u_replaced, "Updated Text")
+            }
+        }
+    })
+
+    # ── [48] Open URL ─────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
+        "WFWorkflowActionParameters": {
+            "WFInput": action_out(_u_replaced, "Updated Text")
+        }
+    })
+
+    # ── [49] END IF not empty ─────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": _g_replace_check,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ── [50] Exit ─────────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+        "WFWorkflowActionParameters": {}
+    })
+
+    # ── [51] END IF url_fetch contains {{open-url}} ───────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_url_fetch_val2,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ── [52] IF fetch_result (media download) has any value ───────────────────
+    # Tải media từ url_fetch (= url_media)
+    # Trước tiên cần tải file từ URL media
+    _u_media_dl = uid()
+    _u_url_text = uid()  # gettext để convert url_media → text string
+    
+    # [52] Get Text từ url_fetch → url_text_clean (fix iOS Get URL Content error)
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+        "WFWorkflowActionParameters": {
+            "UUID": _u_url_text,
+            "CustomOutputName": "url_text",
+            "WFTextActionText": text_tok("\ufffc", {
+                "{0, 1}": {"VariableName": "url_fetch", "Type": "Variable"}
+            })
+        }
+    })
+
+    # [53] Download media từ url_text → fetch_result (media)
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
+        "WFWorkflowActionParameters": {
+            "UUID": _u_media_dl,
+            "CustomOutputName": "fetch_result",
+            "ShowHeaders": False,
+            "WFURL": text_tok("\ufffc", {
+                "{0, 1}": {
+                    "OutputUUID": _u_url_text,
+                    "OutputName": "url_text",
+                    "Type": "ActionOutput",
+                    "Aggrandizements": [agg_url()]
+                }
+            })
+        }
+    })
+
+    # [54] IF fetch_result has value (tải thành công) ─────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_has_fetch,
+            "WFControlFlowMode": 0,
+            "WFCondition": 5,   # is not empty
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": action_out(_u_media_dl, "fetch_result")
+            }
+        }
+    })
+
+    # [55] Match extension trong label_now ────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
+        "WFWorkflowActionParameters": {
+            "UUID": u_match_ext,
+            "WFMatchTextPattern": "mp4|mov|jpg|jpeg|heic|png|webp|mp3|m4a",
+            "WFMatchTextCaseSensitive": False,
+            "text": text_tok("\ufffc", {
+                "{0, 1}": {"VariableName": "label_now", "Type": "Variable"}
+            })
+        }
+    })
+
+    # [56] Change case → ext ──────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.text.changecase",
+        "WFWorkflowActionParameters": {
+            "UUID": u_ext,
+            "CustomOutputName": "ext",
+            "WFCaseType": "lowercase",
+            "text": action_out(u_match_ext, "Kết quả")
+        }
+    })
+
+    # [57] Random number 1-9999999 ────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.number.random",
+        "WFWorkflowActionParameters": {
+            "UUID": u_rand_num,
+            "WFRandomNumberMinimum": "1",
+            "WFRandomNumberMaximum": "9999999"
+        }
+    })
+
+    # [58] Set Name: snapall--[title]-[rand].[ext]
+    # String: "snapall--\ufffc-\ufffc.\ufffc"
+    # prefix "snapall--" = 9 chars
+    # {9,1}=title, {11,1}=rand, {13,1}=ext  (dấu "-" thay vì " - ")
     prefix = f"{shortcut_name.lower().replace(' ', '')}--"
-    p = len(prefix)   # e.g. "snapall--" = 9
-    # Offsets trong string f"{prefix}\ufffc - \ufffc.\ufffc":
-    # title at p, rand at p+4, ext at p+6
-    name_string = f"{prefix}\ufffc - \ufffc.\ufffc"
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setname',
-        'WFWorkflowActionParameters': {
-            'UUID': u_set_name,
-            'CustomOutputName': 'media_loaded',
-            'WFDontIncludeFileExtension': True,
-            'WFName': text_token(name_string, {
-                f'{{{p}, 1}}':   {'VariableName': 'title', 'Type': 'Variable'},
-                f'{{{p+4}, 1}}': {'OutputUUID': u_rand_num, 'OutputName': 'Random Number', 'Type': 'ActionOutput'},
-                f'{{{p+6}, 1}}': {'OutputUUID': u_ext_lower, 'OutputName': 'ext', 'Type': 'ActionOutput'},
+    p = len(prefix)
+    name_str = f"{prefix}\ufffc-\ufffc.\ufffc"
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setitemname",
+        "WFWorkflowActionParameters": {
+            "UUID": u_media_loaded,
+            "CustomOutputName": "media_loaded",
+            "WFName": text_tok(name_str, {
+                f"{{{p}, 1}}":   {"VariableName": "api_result", "Type": "Variable", "Aggrandizements": agg_dict_key("title")},
+                f"{{{p+2}, 1}}": {"OutputUUID": u_rand_num, "OutputName": "Số ngẫu nhiên", "Type": "ActionOutput"},
+                f"{{{p+4}, 1}}": {"OutputUUID": u_ext, "OutputName": "ext", "Type": "ActionOutput"}
             }),
-            'WFInput': make_action_attachment(u_fetch_res, 'fetch_result')
+            "WFInput": action_out(_u_media_dl, "fetch_result")
         }
     })
 
-    # ─── 43. IF label_now contains 🎵 → Lưu vào Documents ───────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_save_type,
-            'WFControlFlowMode': 0,
-            'WFCondition': 99,   # contains
-            'WFConditionalActionString': '🎵',
-            'WFInput': {
-                'Type': 'Variable',
-                'Variable': make_var_attachment('label_now')
+    # [59] IF label_now contains 🎵 → lưu Documents ───────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_is_audio,
+            "WFControlFlowMode": 0,
+            "WFCondition": 99,
+            "WFConditionalActionString": "🎵",
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": var_ref("label_now", [agg_str()])
             }
         }
     })
 
-    # ─── 44. Save to Documents ────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.documentpicker.save',
-        'WFWorkflowActionParameters': {
-            'UUID': u_save_file,
-            'CustomOutputName': 'Saved File',
-            'WFFileDestinationPath': 'Documents',
-            'WFAskWhereToSave': False,
-            'WFInput': make_action_attachment(u_set_name, 'media_loaded')
-        }
-    })
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'Saved File',
-            'WFInput': make_action_attachment(u_save_file, 'Saved File')
+    # [60] Save to Documents ─────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.documentpicker.save",
+        "WFWorkflowActionParameters": {
+            "UUID": u_saved_file,
+            "WFAskWhereToSave": False,
+            "WFInput": action_out(u_media_loaded, "media_loaded")
         }
     })
 
-    # ─── 45. Set m_file = open_file ───────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'm_file',
-            'WFInput': make_var_attachment('open_file')
+    # [61] Set m_file = api_result["open_file"] ───────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "m_file",
+            "WFInput": var_ref("api_result", agg_dict_key("open_file"))
         }
     })
 
-    # ─── 46. OTHERWISE ────────────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_save_type,
-            'WFControlFlowMode': 1
+    # [62] OTHERWISE ──────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_is_audio,
+            "WFControlFlowMode": 1
         }
     })
 
-    # ─── 47. Save to Recents (Photos) ────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.savetocameraroll',
-        'WFWorkflowActionParameters': {
-            'UUID': u_save_recents,
-            'WFCameraRollSelectedGroup': 'Recents',
-            'WFInput': make_action_attachment(u_set_name, 'media_loaded')
+    # [63] Save to Photos/Recents ─────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.savetocameraroll",
+        "WFWorkflowActionParameters": {
+            "WFInput": action_out(u_media_loaded, "media_loaded")
         }
     })
 
-    # ─── 48. Set m_album = open_album ─────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'm_album',
-            'WFInput': make_var_attachment('open_album')
+    # [64] Set m_album = api_result["open_album"] ─────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "m_album",
+            "WFInput": var_ref("api_result", agg_dict_key("open_album"))
         }
     })
 
-    # ─── 49. END IF (save type) ───────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_save_type,
-            'WFControlFlowMode': 2
+    # [65] END IF is_audio ────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_is_audio,
+            "WFControlFlowMode": 2
         }
     })
 
-    # ─── 50. END IF (if fetch_result valid) ──────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_if_valid,
-            'WFControlFlowMode': 2
+    # [66] END IF has_fetch ───────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_has_fetch,
+            "WFControlFlowMode": 2
         }
     })
 
-    # ─── 51. IF Repeat Index > count_select → Thoát vòng lặp ─────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_loop_done,
-            'WFControlFlowMode': 0,
-            'WFCondition': 2,   # Is Greater Than
-            'WFNumberValue': make_var_attachment('count_select'),
-            'WFInput': {
-                'Type': 'Variable',
-                'Variable': make_repeat_index_attachment()
+    # ── PHẦN 3: MENU SAU KHI TẢI XONG ────────────────────────────────────────
+    # [67] IF Repeat Index > count_select → hiện menu xong ────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "UUID": uid(),
+            "GroupingIdentifier": g_loop_done,
+            "WFControlFlowMode": 0,
+            "WFCondition": 2,   # Greater Than
+            "WFNumberValue": action_out(u_count_select, "count_select"),
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": repeat_index_ref()
             }
         }
     })
 
-    # ─── 52. Add m_album to menu_done ─────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.appendvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'menu_done',
-            'WFInput': make_var_attachment('m_album')
+    # [68] Add m_album to menu_done ───────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "menu_done",
+            "WFInput": var_ref("m_album")
         }
     })
 
-    # ─── 53. Add m_file to menu_done ──────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.appendvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'menu_done',
-            'WFInput': make_var_attachment('m_file')
+    # [69] Add m_file to menu_done ────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "menu_done",
+            "WFInput": var_ref("m_file")
         }
     })
 
-    # ─── 54. Add close to menu_done ───────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.appendvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'menu_done',
-            'WFInput': make_var_attachment('close')
+    # [70] Add close to menu_done ─────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "menu_done",
+            "WFInput": var_ref("api_result", agg_dict_key("close"))
         }
     })
 
-    # ─── 55. Choose from menu_done ────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.choosefromlist',
-        'WFWorkflowActionParameters': {
-            'UUID': u_menu_select,
-            'CustomOutputName': 'menu_done_select',
-            'WFInput': make_var_attachment('menu_done'),
-            'WFChooseFromListActionPrompt': '🎉 Tải xong! Bạn muốn làm gì tiếp theo?',
-            'WFChooseFromListActionSelectMultiple': False
-        }
-    })
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.setvariable',
-        'WFWorkflowActionParameters': {
-            'WFVariableName': 'menu_done_select',
-            'WFInput': make_action_attachment(u_menu_select, 'menu_done_select')
+    # [71] Choose from menu_done ──────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefromlist",
+        "WFWorkflowActionParameters": {
+            "UUID": u_menu_select,
+            "CustomOutputName": "menu_done_select",
+            "WFInput": var_ref("menu_done"),
+            "WFChooseFromListActionPrompt": text_tok("\ufffc", {
+                "{0, 1}": var_ref("api_result", agg_dict_key("menu_done_title"))["Value"]
+            }),
+            "WFChooseFromListActionSelectMultiple": False
         }
     })
 
-    # ─── 56. IF menu_done_select is open_album ───────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_check_album,
-            'WFControlFlowMode': 0,
-            'WFCondition': 4,   # Is
-            'WFConditionalActionString': '📸 Mở Album Ảnh',
-            'WFInput': {
-                'Type': 'Variable',
-                'Variable': make_var_attachment('menu_done_select')
+    # [72] IF menu_done_select == open_album ──────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "UUID": uid(),
+            "GroupingIdentifier": g_open_album,
+            "WFControlFlowMode": 0,
+            "WFCondition": 4,
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": action_out(u_menu_select, "menu_done_select", [agg_str()])
+            },
+            "WFConditionalActionString": text_tok("\ufffc", {
+                "{0, 1}": var_ref("api_result", agg_dict_key("open_album"))["Value"]
+            })
+        }
+    })
+
+    # [73] Open Photos ────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.openapp",
+        "WFWorkflowActionParameters": {
+            "WFAppIdentifier": "com.apple.mobileslideshow",
+            "WFSelectedApp": {
+                "BundleIdentifier": "com.apple.Photos",
+                "Name": "Photos",
+                "TeamIdentifier": "0000000000"
             }
         }
     })
 
-    # ─── 57. Open Photos app ──────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.openapp',
-        'WFWorkflowActionParameters': {
-            'WFAppIdentifier': 'com.apple.mobileslideshow'
+    # [74] END IF open_album ──────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_open_album,
+            "WFControlFlowMode": 2
         }
     })
 
-    # ─── 58. END IF (album) ───────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_check_album,
-            'WFControlFlowMode': 2
+    # [75] IF menu_done_select == open_file ───────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "UUID": uid(),
+            "GroupingIdentifier": g_open_file,
+            "WFControlFlowMode": 0,
+            "WFCondition": 4,
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": action_out(u_menu_select, "menu_done_select", [agg_str()])
+            },
+            "WFConditionalActionString": text_tok("\ufffc", {
+                "{0, 1}": var_ref("api_result", agg_dict_key("open_file"))["Value"]
+            })
         }
     })
 
-    # ─── 59. IF menu_done_select is open_file ────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_check_file,
-            'WFControlFlowMode': 0,
-            'WFCondition': 4,   # Is
-            'WFConditionalActionString': '📁 Mở ứng dụng Tệp',
-            'WFInput': {
-                'Type': 'Variable',
-                'Variable': make_var_attachment('menu_done_select')
-            }
+    # [76] Open in Files (Saved File) ─────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.openin",
+        "WFWorkflowActionParameters": {
+            "WFOpenInAppIdentifier": "com.apple.DocumentsApp",
+            "WFOpenInAskWhenRun": False,
+            "WFInput": action_out(u_saved_file, "Tệp đã lưu")
         }
     })
 
-    # ─── 60. Open Saved File in Files app ────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.openin',
-        'WFWorkflowActionParameters': {
-            'WFOpenInAppIdentifier': 'com.apple.DocumentsApp',
-            'WFOpenInAskWhenRun': False,
-            'WFInput': make_var_attachment('Saved File')
+    # [77] END IF open_file ───────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_open_file,
+            "WFControlFlowMode": 2
         }
     })
 
-    # ─── 61. END IF (file) ────────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_check_file,
-            'WFControlFlowMode': 2
+    # [78] Exit (kết thúc shortcut) ───────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+        "WFWorkflowActionParameters": {}
+    })
+
+    # [79] END IF loop_done ───────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_loop_done,
+            "WFControlFlowMode": 2
         }
     })
 
-    # ─── 62. Stop this shortcut ───────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.exit',
-        'WFWorkflowActionParameters': {}
-    })
-
-    # ─── 63. END IF (loop done) ───────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.conditional',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_loop_done,
-            'WFControlFlowMode': 2
+    # [80] END REPEAT ─────────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.repeat.count",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_repeat,
+            "WFControlFlowMode": 2
         }
     })
 
-    # ─── 64. END REPEAT ───────────────────────────────────────────────────────
-    actions.append({
-        'WFWorkflowActionIdentifier': 'is.workflow.actions.repeat.count',
-        'WFWorkflowActionParameters': {
-            'GroupingIdentifier': grp_repeat,
-            'WFControlFlowMode': 2
-        }
-    })
-
-    # ─── Workflow metadata ────────────────────────────────────────────────────
     all_content_classes = [
-        'WFAppStoreAppContentItem', 'WFArticleContentItem', 'WFContactContentItem',
-        'WFDateContentItem', 'WFEmailAddressContentItem', 'WFGenericFileContentItem',
-        'WFImageContentItem', 'WFiTunesProductContentItem', 'WFLocationContentItem',
-        'WFDCMapsLinkContentItem', 'WFAVAssetContentItem', 'WFPDFContentItem',
-        'WFPhoneNumberContentItem', 'WFRichTextContentItem', 'WFSafariWebPageContentItem',
-        'WFStringContentItem', 'WFURLContentItem'
+        "WFAppStoreAppContentItem", "WFArticleContentItem", "WFContactContentItem",
+        "WFDateContentItem", "WFEmailAddressContentItem", "WFGenericFileContentItem",
+        "WFImageContentItem", "WFiTunesProductContentItem", "WFLocationContentItem",
+        "WFDCMapsLinkContentItem", "WFAVAssetContentItem", "WFPDFContentItem",
+        "WFPhoneNumberContentItem", "WFRichTextContentItem", "WFSafariWebPageContentItem",
+        "WFStringContentItem", "WFURLContentItem"
     ]
 
     return {
-        'WFWorkflowMinimumClientVersion': 900,
-        'WFWorkflowClientVersion': '2607.1',
-        'WFWorkflowClientRelease': '8.0',
-        'WFWorkflowIcon': {
-            'WFWorkflowIconStartColor': 4282601983,
-            'WFWorkflowIconGlyphNumber': 59511
+        "WFWorkflowMinimumClientVersion": 900,
+        "WFWorkflowClientVersion": "2607.1",
+        "WFWorkflowClientRelease": "9.0",
+        "WFWorkflowIcon": {
+            "WFWorkflowIconStartColor": 4282601983,
+            "WFWorkflowIconGlyphNumber": 59511
         },
-        'WFWorkflowTypes': ['NCWidget', 'ActionExtension', 'QuickLook'],
-        'WFWorkflowInputContentItemClasses': all_content_classes,
-        'WFWorkflowActions': actions
+        "WFWorkflowTypes": ["NCWidget", "ActionExtension", "QuickLook"],
+        "WFWorkflowInputContentItemClasses": all_content_classes,
+        "WFWorkflowActions": A
     }
 
 
-def generate_shortcut(source_file, signed_file, api_base_url, name):
-    workflow = build_workflow(api_base_url=api_base_url, shortcut_name=name)
-    with open(source_file, 'wb') as f:
-        plistlib.dump(workflow, f)
-    print(f"📦 Đã tạo source plist: {source_file} ({len(workflow['WFWorkflowActions'])} actions)")
-
+def generate_shortcut(source_file, signed_file, api_url, name):
+    wf = build_workflow(api_url=api_url, shortcut_name=name)
+    with open(source_file, "wb") as f:
+        plistlib.dump(wf, f)
+    print(f"📦 Source: {source_file} ({len(wf['WFWorkflowActions'])} actions)")
     try:
         subprocess.run(
-            ['shortcuts', 'sign', '--mode', 'anyone', '--input', source_file, '--output', signed_file],
+            ["shortcuts", "sign", "--mode", "anyone", "--input", source_file, "--output", signed_file],
             check=True
         )
-        print(f"✅ Đã ký số thành công: {signed_file} ({os.path.getsize(signed_file)} bytes)")
+        print(f"✅ Signed: {signed_file} ({os.path.getsize(signed_file)} bytes)")
     except Exception as e:
-        print(f"⚠️  Không thể ký bằng 'shortcuts sign': {e}")
+        print(f"⚠️  Ký số thất bại: {e}")
 
 
-if __name__ == '__main__':
-    # 1. SnapAll Pro – API riêng snapall.vercel.app
-    generate_shortcut(
-        source_file='SnapAll_Source.shortcut',
-        signed_file='SnapAll.shortcut',
-        api_base_url=DEFAULT_API_URL,
-        name='SnapAll'
-    )
-
-    # 2. Snap Video – cùng kiến trúc, cùng API (để tham khảo / thay thế Snap Video gốc)
-    generate_shortcut(
-        source_file='SnapVideo_Source.shortcut',
-        signed_file='SnapVideo.shortcut',
-        api_base_url=DEFAULT_API_URL,
-        name='Snap Video'
-    )
+if __name__ == "__main__":
+    generate_shortcut("SnapAll_Source.shortcut", "SnapAll.shortcut", DEFAULT_API_URL, "SnapAll")
+    generate_shortcut("SnapVideo_Source.shortcut", "SnapVideo.shortcut", DEFAULT_API_URL, "Snap Video")
