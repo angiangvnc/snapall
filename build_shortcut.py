@@ -122,12 +122,7 @@ def build_workflow(shortcut_name="SnapAll"):
             "GroupingIdentifier": g_menu,
             "WFControlFlowMode": 0,
             "WFMenuPrompt": tok("Choose an action"),
-            "WFMenuItems": [
-                {"WFMenuItemTitle": MENU_ENTER},
-                {"WFMenuItemTitle": MENU_GUIDE},
-                {"WFMenuItemTitle": MENU_SHARE},
-                {"WFMenuItemTitle": MENU_HIDE},
-            ]
+            "WFMenuItems": [MENU_ENTER, MENU_GUIDE, MENU_SHARE, MENU_HIDE]
         }
     })
 
