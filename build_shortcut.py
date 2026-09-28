@@ -191,7 +191,7 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionParameters": {"WFCommentActionText": "=== NHẬN URL + CONFIG ==="}
     })
 
-    # ─── [3] Base64 encode input (giống hệt SV: coerce to String) ─────────────
+    # ─── [3] Base64 encode input (coerce to String) ──────────────────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.base64encode",
         "WFWorkflowActionParameters": {
@@ -207,85 +207,50 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [4] URL action: data:text/html script (giống hệt Snap Video) ────────
-    # Script parse config JSON, tính url64, lang → trả về JSON object
-    # Chỉ thay URL API của riêng mình
-    script = (
-        "data:text/html,<script>"
-        "var b64=`\ufffc`;"
-        "var cfg=`\ufffc`;"
-        "function b64decodeUnicode(str){"
-        "try{return decodeURIComponent(escape(atob(str)));}"
-        "catch(e){try{return atob(str);}catch(e2){return '';}}"
-        "}"
-        "var t=b64decodeUnicode(b64);"
-        "var c=JSON.parse(cfg);"
-        "var m=t.match(/https?:\\/\\/[^\\s]+/);"
-        "var lang=(navigator.language||navigator.userLanguage||'').split('-')[0];"
-        "var o={"
-        f"url_red:\"{API_RED64}\","
-        "url64:m?btoa(unescape(encodeURIComponent(m[0]))):\"\","
-        "lang:lang,"
-        "ask_format:String(c.ask_format),"
-        "show_menu:String(c.show_menu),"
-        "skip_update:t.indexOf('{{skip_update}}')>-1?'true':'false'"
-        "};"
-        "document.write(JSON.stringify(o));"
-        "</script>"
-    )
-    # Tính offset trong script: "var b64=`" = 23 chars → b64 at 23
-    # "var cfg=`" sau đó: 23+1+10 = ???
-    # Cần tính chính xác
-    prefix_b64 = "data:text/html,<script>var b64=`"
-    offset_b64 = len(prefix_b64)  # 32
-    prefix_cfg = prefix_b64 + "\ufffc`;var cfg=`"
-    offset_cfg = len(prefix_cfg)   # 32+1+10 = 43
-
+    # ─── [4] URL action: API_URL?b64={base64_input} (iOS-safe) ───────────────
+    # Không dùng data:text/html+JavaScript vì KHÔNG chạy được trên iOS Shortcuts!
+    api_url_str = f"{API_URL}?b64=\ufffc"
+    o_b64 = len(f"{API_URL}?b64=")
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.url",
         "WFWorkflowActionParameters": {
             "UUID": u_data_url,
-            "WFURLActionURL": tok(script, {
-                f"{{{offset_b64}, 1}}": {
+            "WFURLActionURL": tok(api_url_str, {
+                f"{{{o_b64}, 1}}": {
                     "OutputUUID": u_b64_input,
                     "OutputName": "Đã mã hóa Base64",
-                    "Type": "ActionOutput"
-                },
-                f"{{{offset_cfg}, 1}}": {
-                    "OutputUUID": u_setting,
-                    "OutputName": "setting",
                     "Type": "ActionOutput"
                 }
             })
         }
     })
 
-    # ─── [5] URL Decode (decode mode): parse data:text/html → JSON string ────
+
+    # ─── [5] urlencode (Encode mode) — giữ để khớp số action, output không dùng ──
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.urlencode",
         "WFWorkflowActionParameters": {
             "UUID": u_urldecode,
-            "WFEncodeMode": "Decode",
+            "WFEncodeMode": "Encode",
             "WFInput": tok("\ufffc", {
                 "{0, 1}": {
-                    "OutputUUID": u_data_url,
-                    "OutputName": "URL",
-                    "Type": "ActionOutput",
-                    "Aggrandizements": [agg_rich()]
+                    "OutputUUID": u_b64_input,
+                    "OutputName": "Đã mã hóa Base64",
+                    "Type": "ActionOutput"
                 }
             })
         }
     })
 
-    # ─── [6] Set main_json = urldecode → coerce to Dictionary ────────────────
+    # ─── [6] Set main_json = setting (có url_red, lang, ask_format...) ────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
         "WFWorkflowActionParameters": {
             "WFVariableName": "main_json",
             "WFInput": {
                 "Value": {
-                    "OutputUUID": u_urldecode,
-                    "OutputName": "Văn bản URL đã giải mã",
+                    "OutputUUID": u_setting,
+                    "OutputName": "setting",
                     "Type": "ActionOutput",
                     "Aggrandizements": [agg_dict()]
                 },
@@ -294,32 +259,22 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [7] URL action: API URL với params (giống Snap Video, thay domain) ──
-    # "https://snapall.vercel.app/api/parse?lang=\ufffc&b64=\ufffc"
-    api_url_str = f"{API_URL}?lang=\ufffc&ask_format=\ufffc&show_menu=\ufffc&skip_update=\ufffc&b64=\ufffc"
-    # Tính offsets:
-    base = f"{API_URL}?lang="
-    o_lang        = len(base)                   # offset of lang value
-    o_ask_format  = o_lang + 1 + len("&ask_format=")
-    o_show_menu   = o_ask_format + 1 + len("&show_menu=")
-    o_skip_update = o_show_menu + 1 + len("&skip_update=")
-    o_b64         = o_skip_update + 1 + len("&b64=")
-
+    # ─── [7] URL action: API_URL?b64={base64_input} (sẽ là url_fetch ban đầu) ──────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.url",
         "WFWorkflowActionParameters": {
             "UUID": u_api_url,
             "WFURLActionURL": tok(api_url_str, {
-                f"{{{o_lang}, 1}}":        var_ref("main_json", agg_dict_key("lang"))["Value"],
-                f"{{{o_ask_format}, 1}}":  var_ref("main_json", agg_dict_key("ask_format"))["Value"],
-                f"{{{o_show_menu}, 1}}":   var_ref("main_json", agg_dict_key("show_menu"))["Value"],
-                f"{{{o_skip_update}, 1}}": var_ref("main_json", agg_dict_key("skip_update"))["Value"],
-                f"{{{o_b64}, 1}}":         var_ref("main_json", agg_dict_key("url64"))["Value"],
+                f"{{{o_b64}, 1}}": {
+                    "OutputUUID": u_b64_input,
+                    "OutputName": "Đã mã hóa Base64",
+                    "Type": "ActionOutput"
+                }
             })
         }
     })
 
-    # ─── [8] Set url_fetch = URL (action 7) ──────────────────────────────────
+    # ─── [8] Set url_fetch = URL (action 7 = API URL ban đầu) ─────────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
         "WFWorkflowActionParameters": {
@@ -349,18 +304,17 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # ─── [11] URL action: url_red + b64(url_fetch) ───────────────────────────
+    # ─── [11] URL action: trực tiếp từ url_fetch (không proxy) ─────────────────
+    # - Lần 1: url_fetch = API URL → download JSON
+    # - Lần 2+: url_fetch = media URL → download video/audio/image
+    # Snap Video dùng proxy url_red+base64 vì cần server riêng.
+    # SnapAll download thẳng để hoạt động trên iPhone không cần server proxy.
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.url",
         "WFWorkflowActionParameters": {
             "UUID": u_dl_url,
-            "WFURLActionURL": tok("\ufffc\ufffc", {
-                "{0, 1}": var_ref("main_json", agg_dict_key("url_red"))["Value"],
-                "{1, 1}": {
-                    "OutputUUID": u_b64_loop,
-                    "OutputName": "Đã mã hóa Base64",
-                    "Type": "ActionOutput"
-                }
+            "WFURLActionURL": tok("\ufffc", {
+                "{0, 1}": {"VariableName": "url_fetch", "Type": "Variable"}
             })
         }
     })
