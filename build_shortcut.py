@@ -74,6 +74,7 @@ def build_workflow(shortcut_name="SnapAll"):
     u_selected      = uid()
     u_media_url_act = uid()
     u_media_file    = uid()
+    u_audio_named   = uid()
 
     # Group IDs
     g_no_input  = uid()
@@ -467,7 +468,7 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # [34] IF label_now chứa ký hiệu "🎵" (Âm thanh MP3) → Lưu vào Tệp (Files)
+    # [34] IF label_now chứa ký hiệu "🎵" (Âm thanh MP3) → Đổi tên đuôi .mp3 & Lưu vào Tệp (Files)
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {
@@ -478,13 +479,30 @@ def build_workflow(shortcut_name="SnapAll"):
             "WFInput": {"Type": "Variable", "Variable": var_ref("label_now", [agg_str()])}
         }
     })
-    # [35] Lưu file âm thanh vào Files (cho phép chọn nơi lưu hoặc iCloud)
+    # [35] Đổi tên tệp bắt buộc có phần mở rộng .mp3: {title}.mp3
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setitemname",
+        "WFWorkflowActionParameters": {
+            "UUID": u_audio_named,
+            "CustomOutputName": "audio_mp3",
+            "WFDontIncludeFileExtension": False,
+            "WFName": tok("\ufffc.mp3", {
+                "{0, 1}": {
+                    "VariableName": "api_json",
+                    "Type": "Variable",
+                    "Aggrandizements": [agg_dict(), {"Type": "WFDictionaryValueVariableAggrandizement", "DictionaryKey": "title"}, agg_str()]
+                }
+            }),
+            "WFInput": act_out(u_media_file, "media_file")
+        }
+    })
+    # [36] Lưu file âm thanh (.mp3) vào Files
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.documentpicker.save",
         "WFWorkflowActionParameters": {
             "WFFileStorageService": "iCloud Drive",
             "SelectionMode": "Save",
-            "WFInput": act_out(u_media_file, "media_file")
+            "WFInput": act_out(u_audio_named, "audio_mp3")
         }
     })
 
