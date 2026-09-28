@@ -155,6 +155,15 @@ def build_workflow(shortcut_name="SnapAll"):
     g_open_album      = uid()
     g_open_file       = uid()
 
+    # Initial menu (khi chạy trực tiếp, không qua Share Sheet)
+    g_no_input        = uid()   # IF ExtensionInput has no value
+    g_init_menu       = uid()   # choosefrommenu
+    u_ask_url         = uid()   # ask for URL
+    MENU_ENTER_LINK   = "💬 Enter video link"
+    MENU_GUIDE        = "📖 User guide"
+    MENU_SHARE_HELP   = "⚠️ Not showing in the share sheet?"
+    MENU_HIDE         = "⚙️ Hide this menu next time"
+
     # ─── [0] Comment ─────────────────────────────────────────────────────────
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.comment",
@@ -191,12 +200,11 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionParameters": {"WFCommentActionText": "=== NHẬN URL + CONFIG ==="}
     })
 
-    # ─── [3] Base64 encode input (coerce to String) ──────────────────────────
+    # ─── [3] Set shared_url = ExtensionInput (chuẩn bị URL cho cả 2 luồng) ──────
     A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.base64encode",
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
         "WFWorkflowActionParameters": {
-            "UUID": u_b64_input,
-            "WFBase64LineBreakMode": "None",
+            "WFVariableName": "shared_url",
             "WFInput": {
                 "Value": {
                     "Type": "ExtensionInput",
@@ -204,6 +212,142 @@ def build_workflow(shortcut_name="SnapAll"):
                 },
                 "WFSerializationType": "WFTextTokenAttachment"
             }
+        }
+    })
+
+    # ─── [4] IF shared_url has no value (không có Share Sheet input) ──────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_no_input,
+            "WFControlFlowMode": 0,
+            "WFCondition": 101,
+            "WFInput": {"Type": "Variable", "Variable": var_ref("shared_url", [agg_str()])}
+        }
+    })
+
+    # ─── [5] choosefrommenu "Choose an action" (giống Snap Video) ──────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_init_menu,
+            "WFControlFlowMode": 0,
+            "WFMenuPrompt": tok("Choose an action"),
+            "WFMenuItems": [
+                {"WFMenuItemTitle": MENU_ENTER_LINK},
+                {"WFMenuItemTitle": MENU_GUIDE},
+                {"WFMenuItemTitle": MENU_SHARE_HELP},
+                {"WFMenuItemTitle": MENU_HIDE},
+            ]
+        }
+    })
+
+    # ─── [6] CASE: Enter video link ────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_init_menu,
+            "WFControlFlowMode": 0,
+            "WFMenuItemTitle": MENU_ENTER_LINK
+        }
+    })
+
+    # ─── [7] Ask for URL ────────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.ask",
+        "WFWorkflowActionParameters": {
+            "UUID": u_ask_url,
+            "WFAskActionPrompt": tok("💬 Nhập link video cần tải:"),
+            "WFAskActionDefaultAnswer": tok(""),
+            "WFAskActionKeyboardType": "URL"
+        }
+    })
+
+    # ─── [8] Set shared_url = entered URL ────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "shared_url",
+            "WFInput": act_out(u_ask_url, "Provided Input")
+        }
+    })
+
+    # ─── [9] CASE: User guide ─────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_init_menu,
+            "WFControlFlowMode": 0,
+            "WFMenuItemTitle": MENU_GUIDE
+        }
+    })
+
+    # ─── [10] Open guide page ─────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
+        "WFWorkflowActionParameters": {"WFURL": tok("https://snapall.vercel.app/")}
+    })
+
+    # ─── [11] Exit ───────────────────────────────────────────────────────────
+    A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
+
+    # ─── [12] CASE: Not showing in share sheet? ───────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_init_menu,
+            "WFControlFlowMode": 0,
+            "WFMenuItemTitle": MENU_SHARE_HELP
+        }
+    })
+
+    # ─── [13] Open Apple Share Sheet help ────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
+        "WFWorkflowActionParameters": {"WFURL": tok("https://support.apple.com/guide/shortcuts/use-shortcuts-in-apps-apd886daaaf3/ios")}
+    })
+
+    # ─── [14] Exit ───────────────────────────────────────────────────────────
+    A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
+
+    # ─── [15] CASE: Hide this menu next time ─────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_init_menu,
+            "WFControlFlowMode": 0,
+            "WFMenuItemTitle": MENU_HIDE
+        }
+    })
+
+    # ─── [16] Exit ───────────────────────────────────────────────────────────
+    A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
+
+    # ─── [17] END choosefrommenu ──────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_init_menu,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ─── [18] END IF no_input ────────────────────────────────────────────────
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_no_input,
+            "WFControlFlowMode": 2
+        }
+    })
+
+    # ─── [19] Base64 encode shared_url (không phải ExtensionInput trực tiếp) ─
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.base64encode",
+        "WFWorkflowActionParameters": {
+            "UUID": u_b64_input,
+            "WFBase64LineBreakMode": "None",
+            "WFInput": var_ref("shared_url", [agg_str()])
         }
     })
 
