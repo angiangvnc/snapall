@@ -37,6 +37,8 @@ Phím tắt **SnapAll Pro v8.0** được chuyển đổi trực tiếp từ 100
 ## 🚀 CÁCH CÀI ĐẶT & SỬ DỤNG
 
 ### 1. Cài đặt trực tiếp file đã ký số Apple hợp lệ:
+* **Cách nhanh nhất (iCloud):** mở link [https://www.icloud.com/shortcuts/6e6f9bd8cf874f3db43d753fcea81669](https://www.icloud.com/shortcuts/6e6f9bd8cf874f3db43d753fcea81669) trên iPhone ➔ **Thêm phím tắt**.
+  - ⚠️ Mỗi lần build lại phím tắt cần tạo link iCloud mới (Phím tắt ➔ Chia sẻ ➔ Sao chép liên kết iCloud) và cập nhật vào `index.html`.
 * **Trên iPhone/iPad:**
   - Truy cập web của bạn hoặc tải trực tiếp file [SnapAll.shortcut](file:///Users/hoduylinh/Documents/Sites/shortcut/snapall/SnapAll.shortcut).
   - Nhấn **Thêm phím tắt** (hoặc **Thay thế**).
