@@ -90,6 +90,47 @@ def build_workflow(shortcut_name="SnapAll"):
     MENU_SHARE = "⚠️ Not showing in the share sheet?"
     MENU_HIDE  = "⚙️ Hide this menu next time"
 
+    # Thông báo kiểu Snap Video
+    DONE_TITLE   = "🥳 Download successful!!"
+    ERR_TITLE    = "😢 Download failed!!"
+    OPEN_PHOTOS  = "🖼️ Open Photos"
+    OPEN_FILES   = "📁 Open Files"
+    CLOSE        = "❌ Close"
+
+    def add_menu(prompt_token, cases):
+        """cases: list of (title, [actions]) → choosefrommenu hoàn chỉnh (start/case/end)."""
+        g = uid()
+        A.append({
+            "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+            "WFWorkflowActionParameters": {
+                "GroupingIdentifier": g,
+                "WFControlFlowMode": 0,
+                "WFMenuPrompt": prompt_token,
+                "WFMenuItems": [t for t, _ in cases]
+            }
+        })
+        for title, acts in cases:
+            A.append({
+                "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+                "WFWorkflowActionParameters": {
+                    "GroupingIdentifier": g,
+                    "WFControlFlowMode": 1,
+                    "WFMenuItemTitle": title
+                }
+            })
+            A.extend(acts)
+        A.append({
+            "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+            "WFWorkflowActionParameters": {"GroupingIdentifier": g, "WFControlFlowMode": 2}
+        })
+
+    def open_url(url):
+        return {"WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
+                "WFWorkflowActionParameters": {"WFURL": tok(url)}}
+
+    def exit_act():
+        return {"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}}
+
     # =========================================================================
     # PHASE 1: LẤY URL (Share Sheet hoặc Menu nhập tay)
     # =========================================================================
@@ -136,7 +177,7 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionIdentifier": "is.workflow.actions.ask",
         "WFWorkflowActionParameters": {
             "UUID": u_ask_url,
-            "WFAskActionPrompt": tok("💬 Nhập link video (TikTok, Facebook, ...):"),
+            "WFAskActionPrompt": tok("💬 Enter video link:"),
             "WFAskActionDefaultAnswer": tok(""),
             "WFAskActionKeyboardType": "URL"
         }
@@ -330,21 +371,24 @@ def build_workflow(shortcut_name="SnapAll"):
             }
         }
     })
-    # [23] Show error message
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
-        "WFWorkflowActionParameters": {
-            "Text": tok("❌ \ufffc", {
-                "{2, 1}": {
-                    "VariableName": "api_json",
-                    "Type": "Variable",
-                    "Aggrandizements": [agg_dict(), {"Type": "WFDictionaryValueVariableAggrandizement", "DictionaryKey": "message"}, agg_str()]
-                }
-            })
-        }
-    })
+    # [23] Menu báo lỗi kiểu Snap Video: "😢 Download failed!!\n{message}"
+    err_prefix = f"{ERR_TITLE}\n"
+    err_off = len(err_prefix.encode("utf-16-le")) // 2
+    add_menu(
+        tok(err_prefix + "\ufffc", {
+            f"{{{err_off}, 1}}": {
+                "VariableName": "api_json",
+                "Type": "Variable",
+                "Aggrandizements": [agg_dict(), {"Type": "WFDictionaryValueVariableAggrandizement", "DictionaryKey": "message"}, agg_str()]
+            }
+        }),
+        [
+            (MENU_GUIDE, [open_url("https://snapall.vercel.app/"), exit_act()]),
+            (CLOSE, [exit_act()]),
+        ]
+    )
     # [24] Exit
-    A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
+    A.append(exit_act())
 
     # [25] END IF api_err
     A.append({
@@ -367,13 +411,7 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionParameters": {
             "UUID": u_selected,
             "CustomOutputName": "selected",
-            "WFChooseFromListActionPrompt": tok("\ufffc", {
-                "{0, 1}": {
-                    "VariableName": "api_json",
-                    "Type": "Variable",
-                    "Aggrandizements": [agg_dict(), {"Type": "WFDictionaryValueVariableAggrandizement", "DictionaryKey": "menu_title"}, agg_str()]
-                }
-            }),
+            "WFChooseFromListActionPrompt": tok("Choose media:"),
             "WFChooseFromListActionSelectMultiple": True,
             "WFChooseFromListActionSelectAll": False,
             "WFInput": var_ref("api_json", agg_dict_key("labels"))
@@ -535,12 +573,35 @@ def build_workflow(shortcut_name="SnapAll"):
     # PHASE 5: THÔNG BÁO HOÀN TẤT
     # =========================================================================
 
-    # [40] Thông báo hoàn tất
+    # [40] Menu hoàn tất kiểu Snap Video: "🥳 Download successful!!"
+    #      Nếu có chọn âm thanh (🎵) → thêm lựa chọn "📁 Open Files"
+    g_has_audio = uid()
     A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {
-            "Text": tok("✅ Đã tải xong!\n\nKiểm tra ảnh/video trong Photos (🎬🖼️) hoặc Tệp (🎵 âm thanh).")
+            "GroupingIdentifier": g_has_audio,
+            "WFControlFlowMode": 0,
+            "WFCondition": 99,   # Contains
+            "WFConditionalActionString": "🎵",
+            "WFInput": {"Type": "Variable", "Variable": var_ref("selected", [agg_str()])}
         }
+    })
+    add_menu(tok(DONE_TITLE), [
+        (OPEN_PHOTOS, [open_url("photos-redirect://")]),
+        (OPEN_FILES, [open_url("shareddocuments://")]),
+        (CLOSE, [exit_act()]),
+    ])
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {"GroupingIdentifier": g_has_audio, "WFControlFlowMode": 1}
+    })
+    add_menu(tok(DONE_TITLE), [
+        (OPEN_PHOTOS, [open_url("photos-redirect://")]),
+        (CLOSE, [exit_act()]),
+    ])
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {"GroupingIdentifier": g_has_audio, "WFControlFlowMode": 2}
     })
 
     # ──────────────────────────────────────────────────────────────────────────

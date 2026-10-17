@@ -24,13 +24,13 @@ Phím tắt **SnapAll Pro v8.0** được chuyển đổi trực tiếp từ 100
    - Nếu nhãn chọn chứa **Âm thanh (`🎵`)** ➔ Tự động lưu vào ứng dụng **Tệp (Documents)** & gán cờ `m_file`.
    - Nếu là **Video** ➔ Tự động lưu thẳng vào **Cuộn Camera (Recents / Photos)** & gán cờ `m_album`.
 
-5. **Menu điều hướng hoàn tất (Ảnh 2 & 1):**
-   - Khi vòng lặp vượt quá số lượng đã chọn (`Repeat Index > count_select`):
-   - Gom các mục đã tải: `m_album`, `m_file`, `close` vào danh sách `menu_done`.
-   - Hiển thị menu cho người dùng:
-     - Chọn `📸 Mở Album Ảnh` ➔ Mở ứng dụng **Photos**.
-     - Chọn `📁 Mở ứng dụng Tệp` ➔ Mở file vừa lưu trong **Finder / Files**.
-     - Chọn `❌ Đóng` ➔ Dừng phím tắt an toàn.
+5. **Thông báo kiểu Snap Video (menu thay cho hộp thông báo):**
+   - **Chọn định dạng:** `Choose media:` ➔ `🎬 MP4 HD`, `🎬 MP4 FULL HD`, `🎬 MP4 WATERMARK`, `🎵 MP3 128KBPS` (ảnh: `🖼️ PHOTO n`).
+   - **Tải xong:** `🥳 Download successful!!`
+     - `🖼️ Open Photos` ➔ Mở ứng dụng **Photos**.
+     - `📁 Open Files` ➔ Mở ứng dụng **Tệp** (chỉ hiện khi có tải MP3).
+     - `❌ Close` ➔ Dừng phím tắt.
+   - **Lỗi:** `😢 Download failed!!` + nội dung lỗi từ API ➔ `📖 User guide` / `❌ Close`.
 
 ---
 

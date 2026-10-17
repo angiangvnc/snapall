@@ -69,15 +69,15 @@ export default async function handler(req, res) {
       thumbnail,
       video,
       audio,
-      menu_title: menu_title || `⚡️ Chọn định dạng (${title}):`,
+      menu_title: menu_title || 'Choose media:',
       labels,
       medias,
       select_multiple: 'true',    // string 'true' → iOS Shortcuts đọc đúng
       skip_select: '',             // empty = hiện menu; 'true' = bỏ qua menu (tự chọn hết)
-      open_album: '📸 Mở Album Ảnh',
-      open_file: '📁 Mở ứng dụng Tệp',
-      close: '❌ Đóng',
-      menu_done_title: `🎉 Đã tải xong "${title}":`
+      open_album: '🖼️ Open Photos',
+      open_file: '📁 Open Files',
+      close: '❌ Close',
+      menu_done_title: '🥳 Download successful!!'
     };
   }
 
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
     // 1. TIKTOK & DOUYIN
     // ------------------------------------------------------------------
     if (/tiktok\.com|douyin\.com/i.test(inputUrl)) {
-      const response = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(inputUrl)}`, {
+      const response = await fetch(`https://www.tikwm.com/api/?hd=1&url=${encodeURIComponent(inputUrl)}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
         }
@@ -99,39 +99,29 @@ export default async function handler(req, res) {
         const titleText = cleanTitle(item.title ? item.title.trim() : `TikTok by ${author}`);
         const videoHd = item.hdplay || item.play || '';
         const videoSd = item.play || '';
+        const videoWm = item.wmplay || '';
         const audioUrl = item.music || '';
         const images = item.images || [];
 
         const labels = [];
         const medias = {};
+        const add = (lbl, link) => { if (link) { labels.push(lbl); medias[lbl] = link; } };
 
         if (images && images.length > 0) {
-          images.forEach((img, idx) => {
-            const lbl = `🖼️ Tải Ảnh ${idx + 1} jpg`;
-            labels.push(lbl);
-            medias[lbl] = img;
-          });
+          images.forEach((img, idx) => add(`🖼️ PHOTO ${idx + 1}`, img));
         } else {
-          if (videoHd) {
-            labels.push('🎬 Tải Video HD (Không logo) mp4');
-            medias['🎬 Tải Video HD (Không logo) mp4'] = videoHd;
-          }
-          if (videoSd && videoSd !== videoHd) {
-            labels.push('🎬 Tải Video SD mp4');
-            medias['🎬 Tải Video SD mp4'] = videoSd;
-          }
+          add('🎬 MP4 HD', videoSd || videoHd);
+          if (videoHd && videoHd !== videoSd) add('🎬 MP4 FULL HD', videoHd);
+          add('🎬 MP4 WATERMARK', videoWm);
         }
 
-        if (audioUrl) {
-          labels.push('🎵 Trích xuất Âm thanh mp3');
-          medias['🎵 Trích xuất Âm thanh mp3'] = audioUrl;
-        }
+        add('🎵 MP3 128KBPS', audioUrl);
 
         if (labels.length > 0) {
           return res.status(200).json(makeResponse({
             platform: 'tiktok',
             title: titleText,
-            menu_title: `⚡️ Chọn định dạng (${titleText}):`,
+            menu_title: 'Choose media:',
             labels, medias,
             thumbnail: item.cover || '',
             video: videoHd || videoSd,
@@ -172,15 +162,15 @@ export default async function handler(req, res) {
         const labels = [];
         const medias = {};
 
-        if (hd) { labels.push('🎬 Tải Video HD mp4'); medias['🎬 Tải Video HD mp4'] = hd; }
-        if (sd && sd !== hd) { labels.push('🎬 Tải Video SD mp4'); medias['🎬 Tải Video SD mp4'] = sd; }
-        labels.push('🎵 Trích xuất Âm thanh mp3');
-        medias['🎵 Trích xuất Âm thanh mp3'] = finalVideo;
+        if (hd) { labels.push('🎬 MP4 HD'); medias['🎬 MP4 HD'] = hd; }
+        if (sd && sd !== hd) { labels.push('🎬 MP4 SD'); medias['🎬 MP4 SD'] = sd; }
+        labels.push('🎵 MP3 AUDIO');
+        medias['🎵 MP3 AUDIO'] = finalVideo;
 
         return res.status(200).json(makeResponse({
           platform: 'facebook',
           title: titleText,
-          menu_title: `⚡️ Chọn định dạng (${titleText}):`,
+          menu_title: 'Choose media:',
           labels, medias,
           thumbnail: thumbMatch ? thumbMatch[1] : '',
           video: finalVideo, audio: finalVideo
@@ -202,12 +192,12 @@ export default async function handler(req, res) {
       const isAudio = /mp3|m4a/i.test(ext);
       const isImage = /jpg|jpeg|png|webp/i.test(ext);
       const icon = isAudio ? '🎵' : (isImage ? '🖼️' : '🎬');
-      const labelName = `${icon} Tải file gốc ${ext}`;
+      const labelName = `${icon} ${ext.toUpperCase()} ORIGINAL`;
 
       return res.status(200).json(makeResponse({
         platform: 'direct',
         title: `media_file_${Date.now()}`,
-        menu_title: '⚡️ Tải tệp tin media trực tiếp:',
+        menu_title: 'Choose media:',
         labels: [labelName],
         medias: { [labelName]: inputUrl },
         video: isAudio ? '' : inputUrl,
@@ -232,13 +222,13 @@ export default async function handler(req, res) {
       if (ogVideo && ogVideo[1]) {
         const videoUrl = ogVideo[1].replace(/&amp;/g, '&');
         const titleText = cleanTitle(ogTitle ? ogTitle[1] : 'Web Video');
-        const labels = ['🎬 Tải Video mp4', '🎵 Trích xuất Âm thanh mp3'];
-        const medias = { '🎬 Tải Video mp4': videoUrl, '🎵 Trích xuất Âm thanh mp3': videoUrl };
+        const labels = ['🎬 MP4 VIDEO', '🎵 MP3 AUDIO'];
+        const medias = { '🎬 MP4 VIDEO': videoUrl, '🎵 MP3 AUDIO': videoUrl };
 
         return res.status(200).json(makeResponse({
           platform: 'generic',
           title: titleText,
-          menu_title: `⚡️ Tải video (${titleText}):`,
+          menu_title: 'Choose media:',
           labels, medias,
           thumbnail: ogImage ? ogImage[1] : '',
           video: videoUrl, audio: videoUrl

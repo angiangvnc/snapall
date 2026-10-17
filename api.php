@@ -131,7 +131,7 @@ function fetchCurl($url, $customHeaders = [], $followRedirect = true) {
 // 2. Xử lý TIKTOK & DOUYIN
 // -------------------------------------------------------------
 if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
-    $apiUrl = 'https://www.tikwm.com/api/?url=' . urlencode($inputUrl);
+    $apiUrl = 'https://www.tikwm.com/api/?hd=1&url=' . urlencode($inputUrl);
     $res = fetchCurl($apiUrl);
 
     if ($res['code'] === 200 && !empty($res['body'])) {
@@ -145,35 +145,31 @@ if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
             
             $videoHd = !empty($item['hdplay']) ? $item['hdplay'] : ($item['play'] ?? '');
             $videoSd = $item['play'] ?? '';
+            $videoWm = $item['wmplay'] ?? '';
             $audioUrl = $item['music'] ?? '';
             $images = $item['images'] ?? [];
 
             $labels = [];
             $medias = [];
+            $add = function ($lbl, $link) use (&$labels, &$medias) {
+                if (!empty($link)) { $labels[] = $lbl; $medias[$lbl] = $link; }
+            };
 
             // Nếu là album ảnh slideshow
             if (!empty($images) && is_array($images)) {
                 foreach ($images as $idx => $img) {
-                    $lbl = "🖼️ Tải Ảnh " . ($idx + 1) . " jpg";
-                    $labels[] = $lbl;
-                    $medias[$lbl] = $img;
+                    $add('🖼️ PHOTO ' . ($idx + 1), $img);
                 }
             } else {
-                if (!empty($videoHd)) {
-                    $labels[] = '🎬 Tải Video HD (Không logo) mp4';
-                    $medias['🎬 Tải Video HD (Không logo) mp4'] = $videoHd;
+                $add('🎬 MP4 HD', $videoSd ?: $videoHd);
+                if (!empty($videoHd) && $videoHd !== $videoSd) {
+                    $add('🎬 MP4 FULL HD', $videoHd);
                 }
-                if (!empty($videoSd) && $videoSd !== $videoHd) {
-                    $labels[] = '🎬 Tải Video SD mp4';
-                    $medias['🎬 Tải Video SD mp4'] = $videoSd;
-                }
+                $add('🎬 MP4 WATERMARK', $videoWm);
             }
 
             // Âm thanh MP3
-            if (!empty($audioUrl)) {
-                $labels[] = '🎵 Trích xuất Âm thanh mp3';
-                $medias['🎵 Trích xuất Âm thanh mp3'] = $audioUrl;
-            }
+            $add('🎵 MP3 128KBPS', $audioUrl);
 
             echo json_encode([
                 'status' => 'success',
@@ -185,7 +181,7 @@ if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
                 'video_hd' => $videoHd,
                 'video_sd' => $videoSd,
                 'audio' => $audioUrl,
-                'menu_title' => "⚡️ Chọn định dạng (" . $titleText . "):",
+                'menu_title' => 'Choose media:',
                 'labels' => $labels,
                 'medias' => $medias,
                 'download_proxy' => [
@@ -263,15 +259,15 @@ if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
             $medias = [];
 
             if (!empty($hd)) {
-                $labels[] = '🎬 Tải Video Facebook HD mp4';
-                $medias['🎬 Tải Video Facebook HD mp4'] = $hd;
+                $labels[] = '🎬 MP4 HD';
+                $medias['🎬 MP4 HD'] = $hd;
             }
             if (!empty($sd) && (empty($hd) || $sd !== $hd)) {
-                $labels[] = '🎬 Tải Video Facebook SD mp4';
-                $medias['🎬 Tải Video Facebook SD mp4'] = $sd;
+                $labels[] = '🎬 MP4 SD';
+                $medias['🎬 MP4 SD'] = $sd;
             }
-            $labels[] = '🎵 Trích xuất Âm thanh từ Video mp3';
-            $medias['🎵 Trích xuất Âm thanh từ Video mp3'] = $finalVideo;
+            $labels[] = '🎵 MP3 AUDIO';
+            $medias['🎵 MP3 AUDIO'] = $finalVideo;
 
             echo json_encode([
                 'status' => 'success',
@@ -282,7 +278,7 @@ if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
                 'video_hd' => $hd ?: $sd,
                 'video_sd' => $sd ?: $hd,
                 'audio' => $finalVideo,
-                'menu_title' => "⚡️ Chọn định dạng (" . $titleClean . "):",
+                'menu_title' => 'Choose media:',
                 'labels' => $labels,
                 'medias' => $medias,
                 'download_proxy' => [
@@ -309,13 +305,13 @@ if (preg_match('/\.(mp4|mov|mp3|m4a|jpg|jpeg|png|webp)(\?.*)?$/i', $inputUrl, $e
     $isAudio = in_array($ext, ['mp3', 'm4a']);
     $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp']);
     $icon = $isAudio ? '🎵' : ($isImage ? '🖼️' : '🎬');
-    $lbl = "{$icon} Tải file gốc {$ext}";
+    $lbl = $icon . ' ' . strtoupper($ext) . ' ORIGINAL';
 
     echo json_encode([
         'status' => 'success',
         'platform' => 'direct',
         'title' => 'media_file_' . time(),
-        'menu_title' => '⚡️ Tải tệp tin media trực tiếp:',
+        'menu_title' => 'Choose media:',
         'labels' => [$lbl],
         'medias' => [$lbl => $inputUrl],
         'video' => $isAudio ? '' : $inputUrl,
@@ -345,11 +341,11 @@ if (!empty($html) && preg_match('/<meta\s+property="og:video(?::secure_url)?"\s+
         'thumbnail' => '',
         'video' => $videoUrl,
         'audio' => $videoUrl,
-        'menu_title' => "⚡️ Tải video (" . $titleClean . "):",
-        'labels' => ['🎬 Tải Video mp4', '🎵 Trích xuất Âm thanh mp3'],
+        'menu_title' => 'Choose media:',
+        'labels' => ['🎬 MP4 VIDEO', '🎵 MP3 AUDIO'],
         'medias' => [
-            '🎬 Tải Video mp4' => $videoUrl,
-            '🎵 Trích xuất Âm thanh mp3' => $videoUrl
+            '🎬 MP4 VIDEO' => $videoUrl,
+            '🎵 MP3 AUDIO' => $videoUrl
         ]
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     exit;
