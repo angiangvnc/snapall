@@ -93,7 +93,11 @@ function cleanTitle($str) {
     $clean = preg_replace('/[\\\\\\/:\\*\\?"<>\\|#%&{}<>\\$\\!\'`@\\+~]+/', '', $clean);
     $clean = preg_replace('/\\s+/', ' ', $clean);
     $clean = trim($clean);
-    return mb_substr($clean ?: 'video', 0, 60, 'UTF-8');
+    $clean = $clean ?: 'video';
+    if (function_exists('mb_substr')) {
+        return mb_substr($clean, 0, 60, 'UTF-8');
+    }
+    return preg_match('/^.{0,60}/us', $clean, $cut) ? $cut[0] : substr($clean, 0, 60);
 }
 
 // Hàm gửi request cURL

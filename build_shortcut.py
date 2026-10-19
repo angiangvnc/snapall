@@ -15,7 +15,7 @@ import sys
 import uuid
 import subprocess
 
-API_URL = "https://snapall.vercel.app/api/parse"
+API_URL = "https://snapall.giaiphap.pro/api/parse"
 
 
 def uid():
@@ -203,7 +203,7 @@ def build_workflow(shortcut_name="SnapAll"):
     # [6] Open guide web
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
-        "WFWorkflowActionParameters": {"WFURL": tok("https://snapall.vercel.app/")}
+        "WFWorkflowActionParameters": {"WFURL": tok("https://snapall.giaiphap.pro/")}
     })
     # [7] Exit
     A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
@@ -383,7 +383,7 @@ def build_workflow(shortcut_name="SnapAll"):
             }
         }),
         [
-            (MENU_GUIDE, [open_url("https://snapall.vercel.app/"), exit_act()]),
+            (MENU_GUIDE, [open_url("https://snapall.giaiphap.pro/"), exit_act()]),
             (CLOSE, [exit_act()]),
         ]
     )

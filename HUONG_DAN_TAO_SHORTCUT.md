@@ -1,6 +1,6 @@
 # Hướng Dẫn Kiến Trúc & Cài Đặt Phím Tắt SnapAll v8.0 Pro (Kế Thừa 100% Snap Video + API Riêng)
 
-Phím tắt **SnapAll Pro v8.0** được chuyển đổi trực tiếp từ 100% mã nguồn và luồng lệnh của phím tắt **Snap Video** nổi tiếng (từ các ảnh chụp màn hình thực tế), nhưng được trỏ sang **API riêng của bạn** (`https://snapall.vercel.app/api/parse` hoặc `api.php`), hoàn toàn loại bỏ quảng cáo độc hại và không còn phụ thuộc vào bên thứ 3.
+Phím tắt **SnapAll Pro v8.0** được chuyển đổi trực tiếp từ 100% mã nguồn và luồng lệnh của phím tắt **Snap Video** nổi tiếng (từ các ảnh chụp màn hình thực tế), nhưng được trỏ sang **API riêng của bạn** (`https://snapall.giaiphap.pro/api/parse` hoặc `api.php`), hoàn toàn loại bỏ quảng cáo độc hại và không còn phụ thuộc vào bên thứ 3.
 
 ---
 
