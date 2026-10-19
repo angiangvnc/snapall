@@ -27,23 +27,19 @@ Xem hướng dẫn chi tiết từng khối lệnh tại: [HUONG_DAN_TAO_SHORTCU
 
 ---
 
-## 🌐 Triển Khai Web & API Miễn Phí
+## 🌐 Triển Khai Web & API
 
-### 1. Triển khai lên Vercel (Khuyên dùng - Full tính năng cả TikTok & Facebook)
-Repo đã được cấu hình sẵn Serverless Function [api/parse.js](./api/parse.js) và [vercel.json](./vercel.json):
-1. Đăng nhập [Vercel](https://vercel.com) bằng tài khoản GitHub.
-2. Bấm **Add New...** ➔ **Project** ➔ Chọn repo `angiangvnc/snapall`.
-3. Bấm **Deploy**. Bạn sẽ có ngay một website HTTPS miễn phí trọn đời (ví dụ: `snapall.vercel.app`).
+Nguồn chính thức: **https://snapall.giaiphap.pro** (VPS aaPanel · nginx · PHP 8.3 · Cloudflare Tunnel).
+Phím tắt gọi API: `https://snapall.giaiphap.pro/api/parse?b64=...` (nginx rewrite ➔ `api.php`).
 
-### 2. Triển khai lên GitHub Pages (Dành cho web tĩnh & tải file shortcut)
-1. Vào mục **Settings** của repo trên GitHub ➔ **Pages**.
-2. Tại **Branch**, chọn `main` ➔ Thư mục `/(root)` ➔ Bấm **Save**.
-3. Trang web sẽ trực tiếp tải được video TikTok không logo qua CORS và cho phép tải file `SnapAll.shortcut`.
-
-### 3. Chạy trên máy chủ PHP (Local hoặc Cpanel/VPS)
-Yêu cầu: PHP 8.0+ có cài cURL extension.
+### Cập nhật code lên VPS
 ```bash
-# Chạy local test
+git push origin main
+ssh giaiphap.pro 'cd /www/wwwroot/snapall.giaiphap.pro && git pull && chown -R www-data:www-data .'
+```
+
+### Chạy local test (PHP 8.0+ có cURL)
+```bash
 php -S localhost:8000
 ```
 Mở trình duyệt truy cập: `http://localhost:8000`.

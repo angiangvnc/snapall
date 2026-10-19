@@ -14,6 +14,7 @@ import os
 import sys
 import uuid
 import subprocess
+import time
 
 API_URL = "https://snapall.giaiphap.pro/api/parse"
 
@@ -740,15 +741,19 @@ def generate(source, signed, name):
     with open(source, "wb") as f:
         plistlib.dump(wf, f)
     print(f"📦 Source: {source} ({len(wf['WFWorkflowActions'])} actions)")
-    try:
-        subprocess.run(
-            ["shortcuts", "sign", "--mode", "anyone", "--input", source, "--output", signed],
-            check=True
-        )
-        print(f"✅ Signed: {signed} ({os.path.getsize(signed):,} bytes)")
-    except Exception as e:
-        print(f"⚠️  Sign failed: {e}")
-        sys.exit(1)
+    for attempt in range(1, 4):
+        try:
+            subprocess.run(
+                ["shortcuts", "sign", "--mode", "anyone", "--input", source, "--output", signed],
+                check=True
+            )
+            print(f"✅ Signed: {signed} ({os.path.getsize(signed):,} bytes)")
+            return True
+        except Exception as e:
+            print(f"⚠️  Sign attempt {attempt} failed: {e}")
+            time.sleep(5)
+    print(f"❌ Không ký được {signed} (máy chủ ký Apple lỗi) – source đã được cập nhật, hãy chạy lại sau.")
+    return False
 
 
 if __name__ == "__main__":
