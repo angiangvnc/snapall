@@ -435,7 +435,7 @@ def build_workflow(shortcut_name="SnapAll"):
             "CustomOutputName": "selected",
             "WFChooseFromListActionPrompt": tok("Choose media:"),
             "WFChooseFromListActionSelectMultiple": True,
-            "WFChooseFromListActionSelectAll": False,
+            "WFChooseFromListActionSelectAll": True,   # Chọn sẵn tất cả, user chỉ bỏ chọn mục không cần
             "WFInput": var_ref("api_json", agg_dict_key("labels"))
         }
     })

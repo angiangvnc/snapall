@@ -164,7 +164,7 @@ if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
             // Nếu là album ảnh slideshow
             if (!empty($images) && is_array($images)) {
                 foreach ($images as $idx => $img) {
-                    $add('🖼️ PHOTO ' . ($idx + 1), $img);
+                    $add('🖼️ JPG HD ' . ($idx + 1), $img);
                 }
             } else {
                 $add('🎬 MP4 HD', $videoSd ?: $videoHd);

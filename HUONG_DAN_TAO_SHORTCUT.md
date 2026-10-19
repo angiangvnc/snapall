@@ -25,7 +25,7 @@ Phím tắt **SnapAll Pro v8.0** được chuyển đổi trực tiếp từ 100
    - Nếu là **Video** ➔ Tự động lưu thẳng vào **Cuộn Camera (Recents / Photos)** & gán cờ `m_album`.
 
 5. **Thông báo kiểu Snap Video (menu thay cho hộp thông báo):**
-   - **Chọn định dạng:** `Choose media:` ➔ `🎬 MP4 HD`, `🎬 MP4 FULL HD`, `🎬 MP4 WATERMARK`, `🎵 MP3 128KBPS` (ảnh: `🖼️ PHOTO n`).
+   - **Chọn định dạng:** `Choose media:` ➔ `🎬 MP4 HD`, `🎬 MP4 FULL HD`, `🎬 MP4 WATERMARK`, `🎵 MP3 128KBPS` (ảnh: `🖼️ JPG HD n`) – chọn sẵn tất cả, chỉ cần bỏ chọn mục không cần.
    - **Tải xong:** `🥳 Download successful!!` (mở đúng file vừa tải bằng Quick Look)
      - `🎬 Open Video` ➔ Xem ngay video vừa tải (ảnh slideshow: `🖼️ Open Photos` – 1 ảnh xem ngay, nhiều ảnh mở ứng dụng Photos).
      - `🎵 Open MP3` ➔ Nghe ngay file MP3 vừa tải (chỉ hiện khi có tải MP3).
