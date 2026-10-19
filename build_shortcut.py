@@ -98,7 +98,7 @@ def build_workflow(shortcut_name="SnapAll"):
     OPEN_FILES   = "📁 Open Files"
     CLOSE        = "❌ Close"
     OPEN_VIDEO   = "🎬 Open Video"
-    OPEN_PHOTO   = "🖼️ Open Photo"
+    OPEN_PHOTO   = "🖼️ Open Photos"
     OPEN_MP3     = "🎵 Open MP3"
 
     def preview(var_name):
@@ -609,7 +609,27 @@ def build_workflow(shortcut_name="SnapAll"):
         add_menu(tok(DONE_TITLE), list(items) + [(CLOSE, [exit_act()])])
 
     vid   = (OPEN_VIDEO, [preview("visual_files")])
-    photo = (OPEN_PHOTO, [preview("visual_files")])
+    # Ảnh: 1 ảnh → Quick Look; nhiều ảnh → mở ứng dụng Photos (ảnh mới nằm đầu "Gần đây")
+    def photo_actions():
+        u_cnt, g = uid(), uid()
+        return [
+            {"WFWorkflowActionIdentifier": "is.workflow.actions.count",
+             "WFWorkflowActionParameters": {"UUID": u_cnt, "WFCountType": "Items",
+                                            "WFInput": var_ref("visual_files")}},
+            {"WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+             "WFWorkflowActionParameters": {
+                 "GroupingIdentifier": g, "WFControlFlowMode": 0,
+                 "WFCondition": 2,   # Is greater than
+                 "WFNumberValue": "1",
+                 "WFInput": {"Type": "Variable", "Variable": act_out(u_cnt, "Count")}}},
+            open_url("photos-redirect://"),
+            {"WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+             "WFWorkflowActionParameters": {"GroupingIdentifier": g, "WFControlFlowMode": 1}},
+            preview("visual_files"),
+            {"WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+             "WFWorkflowActionParameters": {"GroupingIdentifier": g, "WFControlFlowMode": 2}},
+        ]
+    photo = (OPEN_PHOTO, photo_actions())
     mp3   = (OPEN_MP3,   [preview("audio_files")])
 
     if_selected_contains("🎵",
