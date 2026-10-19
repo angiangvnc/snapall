@@ -51,15 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setLoading(true);
 
         try {
-            // Thử gọi backend (Vercel serverless /api/parse hoặc PHP api.php)
+            // Gọi backend PHP trên VPS (snapall.giaiphap.pro/api.php)
             let data = null;
             try {
-                // Thử endpoint Vercel
-                let response = await fetch(`api/parse?url=${encodeURIComponent(url)}`);
-                if (!response.ok) {
-                    // Thử endpoint PHP
-                    response = await fetch(`api.php?url=${encodeURIComponent(url)}`);
-                }
+                const response = await fetch(`api.php?url=${encodeURIComponent(url)}`);
                 if (response.ok) {
                     data = await response.json();
                 }

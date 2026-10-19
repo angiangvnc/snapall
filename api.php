@@ -121,13 +121,15 @@ function fetchCurl($url, $customHeaders = [], $followRedirect = true) {
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $effectiveUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
     if (PHP_VERSION_ID < 80500) {
         @curl_close($ch);
     }
 
     return [
         'code' => $httpCode,
-        'body' => $response
+        'body' => $response,
+        'url'  => $effectiveUrl
     ];
 }
 
@@ -224,24 +226,34 @@ if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
     if (!empty($html)) {
         $cleanHtml = str_replace(['&quot;', '&amp;'], ['"', '&'], $html);
 
-        function matchPattern($regex, $content) {
-            if (preg_match($regex, $content, $m)) {
-                $val = str_replace('\\/', '/', $m[1]);
-                $decoded = json_decode('"' . $m[1] . '"');
-                return $decoded ?: $val;
-            }
-            return '';
+        // Lấy ID video từ URL cuối (share/v/... redirect sang /reel/{id})
+        $videoId = '';
+        if (preg_match('~/(?:reel|videos)/(\d{8,})|[?&]v=(\d{8,})~', ($res['url'] ?? '') . ' ' . $inputUrl, $idm)) {
+            $videoId = !empty($idm[1]) ? $idm[1] : ($idm[2] ?? '');
         }
 
-        $hd = matchPattern('/"browser_native_hd_url":"(.*?)"/', $cleanHtml);
-        if (!$hd) $hd = matchPattern('/"playable_url_quality_hd":"(.*?)"/', $cleanHtml);
-        if (!$hd) $hd = matchPattern('/hd_src:"(.*?)"/', $cleanHtml);
-        if (!$hd) $hd = matchPattern('/hd_src_no_ratelimit:"(.*?)"/', $cleanHtml);
+        // Ưu tiên link nằm gần ID video (trang reel chứa cả các reel gợi ý)
+        $pickFbUrl = function (array $keys) use ($cleanHtml, $videoId) {
+            $first = '';
+            foreach ($keys as $key) {
+                if (!preg_match_all('/"?' . preg_quote($key, '/') . '"?:"((?:[^"\\\\]|\\\\.)+)"/', $cleanHtml, $all, PREG_OFFSET_CAPTURE)) {
+                    continue;
+                }
+                foreach ($all[1] as $hit) {
+                    $url = json_decode('"' . $hit[0] . '"');
+                    if (!$url) $url = str_replace('\\/', '/', $hit[0]);
+                    if (!preg_match('~^https?://~', $url)) continue;
+                    if ($first === '') $first = $url;
+                    if ($videoId === '') return $url;
+                    $seg = substr($cleanHtml, max(0, $hit[1] - 3000), 6000);
+                    if (strpos($seg, $videoId) !== false) return $url;
+                }
+            }
+            return $first;
+        };
 
-        $sd = matchPattern('/"browser_native_sd_url":"(.*?)"/', $cleanHtml);
-        if (!$sd) $sd = matchPattern('/"playable_url":"(.*?)"/', $cleanHtml);
-        if (!$sd) $sd = matchPattern('/sd_src:"(.*?)"/', $cleanHtml);
-        if (!$sd) $sd = matchPattern('/sd_src_no_ratelimit:"(.*?)"/', $cleanHtml);
+        $hd = $pickFbUrl(['browser_native_hd_url', 'playable_url_quality_hd', 'hd_src_no_ratelimit', 'hd_src']);
+        $sd = $pickFbUrl(['browser_native_sd_url', 'playable_url', 'sd_src_no_ratelimit', 'sd_src']);
 
         $finalVideo = $hd ?: $sd;
 
