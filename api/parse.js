@@ -139,41 +139,94 @@ export default async function handler(req, res) {
     // ------------------------------------------------------------------
     // 2. FACEBOOK
     // ------------------------------------------------------------------
-    if (/facebook\.com|fb\.watch|fb\.com/i.test(inputUrl)) {
-      const fbRes = await fetch(inputUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9'
+    if (/facebook\.com|fb\.watch|fb\.com|fb\.me/i.test(inputUrl)) {
+      const DESKTOP_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
+      const fetchFb = async (ua) => {
+        const r = await fetch(inputUrl, {
+          redirect: 'follow',
+          headers: {
+            'User-Agent': ua,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Upgrade-Insecure-Requests': '1'
+          }
+        });
+        return { html: await r.text(), finalUrl: r.url || inputUrl };
+      };
+
+      // Giải mã chuỗi JSON escape (\/ , \u0026 ...)
+      const unJson = (s) => {
+        try { return JSON.parse(`"${s}"`); } catch (e) { return s.replace(/\\\//g, '/'); }
+      };
+      // Giải mã HTML entity (&#x1edd; &amp; ...)
+      const unHtml = (s) => s
+        .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+        .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+        .replace(/&quot;/g, '"').replace(/&#039;|&apos;/g, "'")
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+      // Lấy URL theo danh sách key, ưu tiên lần xuất hiện gần ID video (trang reel chứa cả reel gợi ý)
+      const pickUrl = (html, keys, videoId) => {
+        let first = '';
+        for (const key of keys) {
+          const re = new RegExp(`"${key}":"((?:[^"\\\\]|\\\\.)+)"`, 'g');
+          let m;
+          while ((m = re.exec(html)) !== null) {
+            const url = unJson(m[1]);
+            if (!/^https?:\/\//.test(url)) continue;
+            if (!first) first = url;
+            if (!videoId) return url;
+            const seg = html.slice(Math.max(0, m.index - 3000), m.index + 3000);
+            if (seg.includes(videoId)) return url;
+          }
         }
-      });
-      const html = await fbRes.text();
+        return first;
+      };
 
-      const sdMatch = html.match(/"sd_src_no_ratelimit":"([^"]+)"|"sd_src":"([^"]+)"/);
-      const hdMatch = html.match(/"hd_src_no_ratelimit":"([^"]+)"|"hd_src":"([^"]+)"/);
-      const thumbMatch = html.match(/og:image" content="([^"]+)"/);
-      const titleMatch = html.match(/og:title" content="([^"]+)"/);
+      let { html, finalUrl } = await fetchFb(DESKTOP_UA);
+      const idMatch = (finalUrl + ' ' + inputUrl).match(/\/(?:reel|videos|watch\/?\?v=)\/?(\d{8,})|[?&]v=(\d{8,})/);
+      const videoId = idMatch ? (idMatch[1] || idMatch[2]) : '';
 
-      const sd = sdMatch ? (sdMatch[1] || sdMatch[2]).replace(/\\/g, '') : '';
-      const hd = hdMatch ? (hdMatch[1] || hdMatch[2]).replace(/\\/g, '') : '';
+      let hd = pickUrl(html, ['browser_native_hd_url', 'playable_url_quality_hd', 'hd_src_no_ratelimit', 'hd_src'], videoId);
+      let sd = pickUrl(html, ['browser_native_sd_url', 'playable_url', 'sd_src_no_ratelimit', 'sd_src'], videoId);
+
+      let thumbMatch = html.match(/og:image" content="([^"]+)"/);
+      let titleMatch = html.match(/og:title" content="([^"]+)"/);
+
+      // Fallback: giao diện mobile thường có og:video
+      if (!hd && !sd) {
+        const mob = await fetchFb(IPHONE_UA);
+        const og = mob.html.match(/property="og:video(?::secure_url|:url)?"\s+content="([^"]+)"/i);
+        if (og) sd = unHtml(og[1]);
+        thumbMatch = thumbMatch || mob.html.match(/og:image" content="([^"]+)"/);
+        titleMatch = titleMatch || mob.html.match(/og:title" content="([^"]+)"/);
+      }
 
       if (sd || hd) {
         const finalVideo = hd || sd;
-        const titleText = cleanTitle(titleMatch ? titleMatch[1] : 'Facebook Video');
+        // Bỏ tiền tố "293K views · 2.5K reactions | "
+        const rawTitle = titleMatch ? unHtml(titleMatch[1]).replace(/^[^|]*\b(views|reactions|lượt xem)\b[^|]*\|\s*/i, '') : 'Facebook Video';
+        const titleText = cleanTitle(rawTitle);
         const labels = [];
         const medias = {};
 
         if (hd) { labels.push('🎬 MP4 HD'); medias['🎬 MP4 HD'] = hd; }
         if (sd && sd !== hd) { labels.push('🎬 MP4 SD'); medias['🎬 MP4 SD'] = sd; }
         labels.push('🎵 MP3 AUDIO');
-        medias['🎵 MP3 AUDIO'] = finalVideo;
+        medias['🎵 MP3 AUDIO'] = sd || finalVideo;
 
         return res.status(200).json(makeResponse({
           platform: 'facebook',
           title: titleText,
           menu_title: 'Choose media:',
           labels, medias,
-          thumbnail: thumbMatch ? thumbMatch[1] : '',
-          video: finalVideo, audio: finalVideo
+          thumbnail: thumbMatch ? unHtml(thumbMatch[1]) : '',
+          video: finalVideo, audio: sd || finalVideo
         }));
       }
 

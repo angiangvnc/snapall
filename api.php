@@ -248,6 +248,8 @@ if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
             } elseif (preg_match('/<title>(.*?)<\/title>/i', $cleanHtml, $tm)) {
                 $titleText = $tm[1];
             }
+            $titleText = html_entity_decode($titleText, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $titleText = preg_replace('/^[^|]*\b(views|reactions|lượt xem)\b[^|]*\|\s*/iu', '', $titleText);
             $titleClean = cleanTitle($titleText);
 
             $thumb = '';
