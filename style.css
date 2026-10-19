@@ -665,3 +665,13 @@ body {
         width: 100%;
     }
 }
+
+.footer-link {
+    color: var(--text-main, #e2e8f0);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color .2s ease;
+}
+.footer-link:hover {
+    color: #818cf8;
+}
