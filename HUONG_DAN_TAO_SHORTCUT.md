@@ -26,9 +26,9 @@ Phím tắt **SnapAll Pro v8.0** được chuyển đổi trực tiếp từ 100
 
 5. **Thông báo kiểu Snap Video (menu thay cho hộp thông báo):**
    - **Chọn định dạng:** `Choose media:` ➔ `🎬 MP4 HD`, `🎬 MP4 FULL HD`, `🎬 MP4 WATERMARK`, `🎵 MP3 128KBPS` (ảnh: `🖼️ PHOTO n`).
-   - **Tải xong:** `🥳 Download successful!!`
-     - `🖼️ Open Photos` ➔ Mở ứng dụng **Photos**.
-     - `📁 Open Files` ➔ Mở ứng dụng **Tệp** (chỉ hiện khi có tải MP3).
+   - **Tải xong:** `🥳 Download successful!!` (mở đúng file vừa tải bằng Quick Look)
+     - `🎬 Open Video` ➔ Xem ngay video vừa tải (ảnh slideshow: `🖼️ Open Photo`).
+     - `🎵 Open MP3` ➔ Nghe ngay file MP3 vừa tải (chỉ hiện khi có tải MP3).
      - `❌ Close` ➔ Dừng phím tắt.
    - **Lỗi:** `😢 Download failed!!` + nội dung lỗi từ API ➔ `📖 User guide` / `❌ Close`.
 
