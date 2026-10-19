@@ -97,6 +97,12 @@ def build_workflow(shortcut_name="SnapAll"):
     OPEN_PHOTOS  = "🖼️ Open Photos"
     OPEN_FILES   = "📁 Open Files"
     CLOSE        = "❌ Close"
+    PLAY_NOW     = "▶️ Play now"
+
+    def play_last():
+        # Quick Look đúng file vừa tải (video / mp3)
+        return {"WFWorkflowActionIdentifier": "is.workflow.actions.previewdocument",
+                "WFWorkflowActionParameters": {"WFInput": var_ref("last_media")}}
 
     def add_menu(prompt_token, cases):
         """cases: list of (title, [actions]) → choosefrommenu hoàn chỉnh (start/case/end)."""
@@ -126,8 +132,9 @@ def build_workflow(shortcut_name="SnapAll"):
         })
 
     def open_url(url):
+        # iOS hiện tại: "Open URLs" đọc URL từ WFInput (WFURL chỉ còn cho bản cũ) → đặt cả hai
         return {"WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
-                "WFWorkflowActionParameters": {"WFURL": tok(url)}}
+                "WFWorkflowActionParameters": {"WFInput": tok(url), "WFURL": tok(url)}}
 
     def exit_act():
         return {"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}}
@@ -202,10 +209,7 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
     # [6] Open guide web
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
-        "WFWorkflowActionParameters": {"WFURL": tok("https://snapall.giaiphap.pro/")}
-    })
+    A.append(open_url("https://snapall.giaiphap.pro/"))
     # [7] Exit
     A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
 
@@ -219,10 +223,7 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
     # [9] Open Apple help
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
-        "WFWorkflowActionParameters": {"WFURL": tok("https://support.apple.com/guide/shortcuts/use-shortcuts-in-apps-apd886daaaf3/ios")}
-    })
+    A.append(open_url("https://support.apple.com/guide/shortcuts/use-shortcuts-in-apps-apd886daaaf3/ios"))
     # [10] Exit
     A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.exit", "WFWorkflowActionParameters": {}})
 
@@ -544,6 +545,10 @@ def build_workflow(shortcut_name="SnapAll"):
             "WFInput": act_out(u_audio_named, "audio_mp3")
         }
     })
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {"WFVariableName": "last_media", "WFInput": act_out(u_audio_named, "audio_mp3")}
+    })
 
     # [36] ELSE → Video hoặc Ảnh → Lưu trực tiếp vào Album Ảnh (Photos)
     A.append({
@@ -556,6 +561,10 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionParameters": {
             "WFInput": act_out(u_media_file, "media_file")
         }
+    })
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {"WFVariableName": "last_media", "WFInput": act_out(u_media_file, "media_file")}
     })
 
     # [38] END IF is_audio
@@ -588,6 +597,7 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
     add_menu(tok(DONE_TITLE), [
+        (PLAY_NOW, [play_last()]),
         (OPEN_PHOTOS, [open_url("photos-redirect://")]),
         (OPEN_FILES, [open_url("shareddocuments://")]),
         (CLOSE, [exit_act()]),
@@ -597,6 +607,7 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionParameters": {"GroupingIdentifier": g_has_audio, "WFControlFlowMode": 1}
     })
     add_menu(tok(DONE_TITLE), [
+        (PLAY_NOW, [play_last()]),
         (OPEN_PHOTOS, [open_url("photos-redirect://")]),
         (CLOSE, [exit_act()]),
     ])
@@ -708,8 +719,8 @@ def audit_workflow(wf):
 
         # 4. openurl audit
         if ident == "is.workflow.actions.openurl":
-            if "WFURL" not in params:
-                errors.append(f"[{idx}] openurl missing WFURL parameter")
+            if "WFInput" not in params:
+                errors.append(f"[{idx}] openurl missing WFInput parameter")
 
         # 5. downloadurl audit
         if ident == "is.workflow.actions.downloadurl":
