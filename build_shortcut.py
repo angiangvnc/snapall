@@ -97,12 +97,32 @@ def build_workflow(shortcut_name="SnapAll"):
     OPEN_PHOTOS  = "🖼️ Open Photos"
     OPEN_FILES   = "📁 Open Files"
     CLOSE        = "❌ Close"
-    PLAY_NOW     = "▶️ Play now"
+    OPEN_VIDEO   = "🎬 Open Video"
+    OPEN_PHOTO   = "🖼️ Open Photo"
+    OPEN_MP3     = "🎵 Open MP3"
 
-    def play_last():
-        # Quick Look đúng file vừa tải (video / mp3)
+    def preview(var_name):
+        # Quick Look mở đúng file vừa tải (xem video/ảnh, nghe mp3)
         return {"WFWorkflowActionIdentifier": "is.workflow.actions.previewdocument",
-                "WFWorkflowActionParameters": {"WFInput": var_ref("last_media")}}
+                "WFWorkflowActionParameters": {"WFInput": var_ref(var_name)}}
+
+    def if_selected_contains(needle, then_fn, else_fn=None):
+        g = uid()
+        A.append({
+            "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+            "WFWorkflowActionParameters": {
+                "GroupingIdentifier": g, "WFControlFlowMode": 0,
+                "WFCondition": 99, "WFConditionalActionString": needle,
+                "WFInput": {"Type": "Variable", "Variable": var_ref("selected", [agg_str()])}
+            }
+        })
+        then_fn()
+        if else_fn:
+            A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+                      "WFWorkflowActionParameters": {"GroupingIdentifier": g, "WFControlFlowMode": 1}})
+            else_fn()
+        A.append({"WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+                  "WFWorkflowActionParameters": {"GroupingIdentifier": g, "WFControlFlowMode": 2}})
 
     def add_menu(prompt_token, cases):
         """cases: list of (title, [actions]) → choosefrommenu hoàn chỉnh (start/case/end)."""
@@ -546,8 +566,8 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
     A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
-        "WFWorkflowActionParameters": {"WFVariableName": "last_media", "WFInput": act_out(u_audio_named, "audio_mp3")}
+        "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+        "WFWorkflowActionParameters": {"WFVariableName": "audio_files", "WFInput": act_out(u_audio_named, "audio_mp3")}
     })
 
     # [36] ELSE → Video hoặc Ảnh → Lưu trực tiếp vào Album Ảnh (Photos)
@@ -563,8 +583,8 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
     A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
-        "WFWorkflowActionParameters": {"WFVariableName": "last_media", "WFInput": act_out(u_media_file, "media_file")}
+        "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+        "WFWorkflowActionParameters": {"WFVariableName": "visual_files", "WFInput": act_out(u_media_file, "media_file")}
     })
 
     # [38] END IF is_audio
@@ -584,37 +604,23 @@ def build_workflow(shortcut_name="SnapAll"):
     # =========================================================================
 
     # [40] Menu hoàn tất kiểu Snap Video: "🥳 Download successful!!"
-    #      Nếu có chọn âm thanh (🎵) → thêm lựa chọn "📁 Open Files"
-    g_has_audio = uid()
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
-        "WFWorkflowActionParameters": {
-            "GroupingIdentifier": g_has_audio,
-            "WFControlFlowMode": 0,
-            "WFCondition": 99,   # Contains
-            "WFConditionalActionString": "🎵",
-            "WFInput": {"Type": "Variable", "Variable": var_ref("selected", [agg_str()])}
-        }
-    })
-    add_menu(tok(DONE_TITLE), [
-        (PLAY_NOW, [play_last()]),
-        (OPEN_PHOTOS, [open_url("photos-redirect://")]),
-        (OPEN_FILES, [open_url("shareddocuments://")]),
-        (CLOSE, [exit_act()]),
-    ])
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
-        "WFWorkflowActionParameters": {"GroupingIdentifier": g_has_audio, "WFControlFlowMode": 1}
-    })
-    add_menu(tok(DONE_TITLE), [
-        (PLAY_NOW, [play_last()]),
-        (OPEN_PHOTOS, [open_url("photos-redirect://")]),
-        (CLOSE, [exit_act()]),
-    ])
-    A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
-        "WFWorkflowActionParameters": {"GroupingIdentifier": g_has_audio, "WFControlFlowMode": 2}
-    })
+    #      🎬 Open Video / 🖼️ Open Photo / 🎵 Open MP3 → Quick Look đúng file vừa tải
+    def done_menu(*items):
+        add_menu(tok(DONE_TITLE), list(items) + [(CLOSE, [exit_act()])])
+
+    vid   = (OPEN_VIDEO, [preview("visual_files")])
+    photo = (OPEN_PHOTO, [preview("visual_files")])
+    mp3   = (OPEN_MP3,   [preview("audio_files")])
+
+    if_selected_contains("🎵",
+        lambda: if_selected_contains("🎬",
+            lambda: done_menu(vid, mp3),
+            lambda: if_selected_contains("🖼",
+                lambda: done_menu(photo, mp3),
+                lambda: done_menu(mp3))),
+        lambda: if_selected_contains("🎬",
+            lambda: done_menu(vid),
+            lambda: done_menu(photo)))
 
     # ──────────────────────────────────────────────────────────────────────────
     all_content_classes = [
