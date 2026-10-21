@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """
-SnapAll v11.3
-- Fix WFControlFlowMode: 1 cho các nhánh menu choosefrommenu (fix crash "There was a problem running the shortcut SnapAll")
-- Fix lưu api_json vào biến bằng setvariable sau downloadurl
-- Fix b64 CustomOutputName độc lập ngôn ngữ
-- Fix savetocameraroll mặc định chuẩn đa ngôn ngữ
-- Kiểm tra an toàn shared_url trước khi gọi API
+SnapAll v12.0
+- Menu 1 chạm trực tiếp chuẩn iOS (tắt select multiple)
+- Thêm detect.dictionary parse JSON tự động (sửa lỗi Text to Dictionary)
+- Tự động đồng bộ số version giữa Shortcut, Web và Tài liệu
 - Tự động audit cấu trúc AST shortcut trước khi ký số
 """
 
@@ -15,8 +13,10 @@ import sys
 import uuid
 import subprocess
 import time
+import re
 
 API_URL = "https://snapall.giaiphap.pro/api/parse"
+VERSION = "12.0"
 
 
 def uid():
@@ -667,7 +667,7 @@ def build_workflow(shortcut_name="SnapAll"):
     return {
         "WFWorkflowMinimumClientVersion": 900,
         "WFWorkflowClientVersion": "2607.1",
-        "WFWorkflowClientRelease": "10.0",
+        "WFWorkflowClientRelease": VERSION,
         "WFWorkflowIcon": {
             "WFWorkflowIconStartColor": 4282601983,
             "WFWorkflowIconGlyphNumber": 59511
@@ -803,6 +803,37 @@ def generate(source, signed, name):
     return False
 
 
+def sync_version_files(version):
+    """Tự động đồng bộ số version sang index.html và HUONG_DAN_TAO_SHORTCUT.md để xóa cache."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # 1. Update index.html
+    index_path = os.path.join(base_dir, "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        content = re.sub(r'style\.css\?v=[0-9\.]+', f'style.css?v={version}', content)
+        content = re.sub(r'app\.js\?v=[0-9\.]+', f'app.js?v={version}', content)
+        content = re.sub(r'SnapAll\.shortcut\?v=[0-9\.]+', f'SnapAll.shortcut?v={version}', content)
+        content = re.sub(r'SnapAll v[0-9\.]+', f'SnapAll v{version}', content)
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        print(f"🔄 Đã đồng bộ index.html -> v{version}")
+
+    # 2. Update HUONG_DAN_TAO_SHORTCUT.md
+    guide_path = os.path.join(base_dir, "HUONG_DAN_TAO_SHORTCUT.md")
+    if os.path.exists(guide_path):
+        with open(guide_path, "r", encoding="utf-8") as f:
+            g_content = f.read()
+        g_content = re.sub(r'SnapAll v[0-9\.]+ Pro', f'SnapAll v{version} Pro', g_content)
+        g_content = re.sub(r'SnapAll Pro v[0-9\.]+', f'SnapAll Pro v{version}', g_content)
+        with open(guide_path, "w", encoding="utf-8") as f:
+            f.write(g_content)
+        print(f"🔄 Đã đồng bộ HUONG_DAN_TAO_SHORTCUT.md -> v{version}")
+
+
 if __name__ == "__main__":
+    print(f"🚀 Bắt đầu build SnapAll v{VERSION}...")
+    sync_version_files(VERSION)
     generate("SnapAll_Source.shortcut", "SnapAll.shortcut", "SnapAll")
     generate("SnapVideo_Source.shortcut", "SnapVideo.shortcut", "Snap Video")
