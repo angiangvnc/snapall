@@ -427,15 +427,14 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # [27] choosefromlist: Hiện danh sách labels cho user chọn (HD / MP3 / ...)
+    # [27] choosefromlist: Hiện danh sách labels cho user chọn 1 chạm trực tiếp (HD / MP3 / ...)
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.choosefromlist",
         "WFWorkflowActionParameters": {
             "UUID": u_selected,
             "CustomOutputName": "selected",
             "WFChooseFromListActionPrompt": tok("Choose media:"),
-            "WFChooseFromListActionSelectMultiple": True,
-            "WFChooseFromListActionSelectAll": True,   # Chọn sẵn tất cả, user chỉ bỏ chọn mục không cần
+            "WFChooseFromListActionSelectMultiple": False,
             "WFInput": var_ref("api_json", agg_dict_key("labels"))
         }
     })
