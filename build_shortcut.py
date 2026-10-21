@@ -88,10 +88,11 @@ def build_workflow(shortcut_name="SnapAll"):
     g_each      = uid()
     g_is_audio  = uid()
 
-    MENU_ENTER = "💬 Enter video link"
-    MENU_GUIDE = "📖 User guide"
-    MENU_SHARE = "⚠️ Not showing in the share sheet?"
-    MENU_HIDE  = "⚙️ Hide this menu next time"
+    MENU_ENTER  = "💬 Enter video link"
+    MENU_UPDATE = "🔄 Check for updates"
+    MENU_GUIDE  = "📖 User guide"
+    MENU_SHARE  = "⚠️ Not showing in the share sheet?"
+    MENU_HIDE   = "⚙️ Hide this menu next time"
 
     # Thông báo kiểu Snap Video
     DONE_TITLE   = "🥳 Download successful!!"
@@ -188,8 +189,8 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionParameters": {
             "GroupingIdentifier": g_menu,
             "WFControlFlowMode": 0,
-            "WFMenuPrompt": tok("Choose an action"),
-            "WFMenuItems": [MENU_ENTER, MENU_GUIDE, MENU_SHARE, MENU_HIDE]
+            "WFMenuPrompt": tok(f"⚡️ SnapAll v{VERSION} - Choose an action"),
+            "WFMenuItems": [MENU_ENTER, MENU_UPDATE, MENU_GUIDE, MENU_SHARE, MENU_HIDE]
         }
     })
 
@@ -220,6 +221,18 @@ def build_workflow(shortcut_name="SnapAll"):
             "WFInput": act_out(u_ask_url, "Provided Input")
         }
     })
+
+    # [5] CASE: Check for updates (WFControlFlowMode: 1 = Case Branch)
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefrommenu",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_menu,
+            "WFControlFlowMode": 1,
+            "WFMenuItemTitle": MENU_UPDATE
+        }
+    })
+    A.append(open_url("https://snapall.giaiphap.pro/"))
+    A.append(exit_act())
 
     # [5] CASE 2: User guide (WFControlFlowMode: 1 = Case Branch)
     A.append({
@@ -321,9 +334,9 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # [19] URL: API_URL?b64={b64} → api_url
-    api_str = f"{API_URL}?b64=\ufffc"
-    o_b64 = len(f"{API_URL}?b64=")
+    # [19] URL: API_URL?v={VERSION}&b64={b64} → api_url
+    api_str = f"{API_URL}?v={VERSION}&b64=\ufffc"
+    o_b64 = len(f"{API_URL}?v={VERSION}&b64=")
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.url",
         "WFWorkflowActionParameters": {
@@ -388,10 +401,44 @@ def build_workflow(shortcut_name="SnapAll"):
     })
 
     # =========================================================================
-    # PHASE 3: KIỂM TRA LỖI API & CHỌN ĐỊNH DẠNG (HD / SD / MP3 / PHOTOS)
+    # PHASE 3: KIỂM TRA BẢN MỚI, LỖI API & CHỌN ĐỊNH DẠNG
     # =========================================================================
 
-    # [22] IF api_json["status"] == "error" → báo lỗi + exit
+    # [23] Kiểm tra cập nhật: IF api_json["has_update"] == "true" → Báo cập nhật
+    g_upd = uid()
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_upd,
+            "WFControlFlowMode": 0,
+            "WFCondition": 4,   # Is equal to
+            "WFConditionalActionString": "true",
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": var_ref("api_json", [agg_dict(), {"Type": "WFDictionaryValueVariableAggrandizement", "DictionaryKey": "has_update"}, agg_str()])
+            }
+        }
+    })
+    add_menu(
+        tok(f"⚡️ Đã có bản cập nhật mới cho SnapAll!\n(Phiên bản hiện tại: v{VERSION})"),
+        [
+            ("🔄 Cập nhật ngay", [
+                {"WFWorkflowActionIdentifier": "is.workflow.actions.openurl",
+                 "WFWorkflowActionParameters": {
+                     "WFInput": var_ref("api_json", agg_dict_key("update_url")),
+                     "WFURL": var_ref("api_json", agg_dict_key("update_url"))
+                 }},
+                exit_act()
+            ]),
+            ("⏭️ Tiếp tục tải video", []),
+        ]
+    )
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {"GroupingIdentifier": g_upd, "WFControlFlowMode": 2}
+    })
+
+    # [24] IF api_json["status"] == "error" → báo lỗi + exit
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {

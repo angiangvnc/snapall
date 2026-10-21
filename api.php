@@ -50,6 +50,38 @@ if (!headers_sent()) {
 }
 
 // -------------------------------------------------------------
+// Versioning & Auto-Update Configuration
+// -------------------------------------------------------------
+$CURRENT_VERSION = '12.0';
+$UPDATE_URL = 'https://www.icloud.com/shortcuts/9e69131bd1074d26bbfa8f3c6894e5a3';
+
+function sendJsonResponse(array $payload) {
+    global $CURRENT_VERSION, $UPDATE_URL;
+    $clientVersion = $_GET['v'] ?? $_GET['version'] ?? '';
+    $hasUpdate = (!empty($clientVersion) && version_compare($clientVersion, $CURRENT_VERSION, '<'));
+    
+    $payload['version'] = $CURRENT_VERSION;
+    $payload['has_update'] = $hasUpdate ? 'true' : 'false';
+    $payload['latest_version'] = $CURRENT_VERSION;
+    $payload['update_url'] = $UPDATE_URL;
+
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+if (isset($_GET['action']) && $_GET['action'] === 'check_update') {
+    $clientVersion = $_GET['v'] ?? $_GET['version'] ?? '1.0';
+    $hasUpdate = version_compare($clientVersion, $CURRENT_VERSION, '<');
+    sendJsonResponse([
+        'status' => 'success',
+        'has_update' => $hasUpdate ? 'true' : 'false',
+        'message' => $hasUpdate 
+            ? "Đã có bản cập nhật mới SnapAll v{$CURRENT_VERSION}!" 
+            : "Bạn đang sử dụng phiên bản mới nhất SnapAll v{$CURRENT_VERSION}."
+    ]);
+}
+
+// -------------------------------------------------------------
 // 1. Nhận & Làm sạch URL
 // -------------------------------------------------------------
 $inputUrl = '';
@@ -79,11 +111,10 @@ if (!empty($inputUrl) && preg_match('/https?:\/\/[^\s]+/i', $inputUrl, $matchUrl
 }
 
 if (empty($inputUrl)) {
-    echo json_encode([
+    sendJsonResponse([
         'status' => 'error',
         'message' => 'Vui lòng cung cấp liên kết (url hoặc b64) video TikTok hoặc Facebook.'
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-    exit;
+    ]);
 }
 
 // Hàm dọn dẹp tiêu đề file sạch
@@ -177,7 +208,7 @@ if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
             // Âm thanh MP3
             $add('🎵 MP3 128KBPS', $audioUrl);
 
-            echo json_encode([
+            sendJsonResponse([
                 'status' => 'success',
                 'platform' => 'tiktok',
                 'title' => $titleText,
@@ -194,16 +225,14 @@ if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
                     'video' => 'api.php?action=download&filename=tiktok_video.mp4&url=' . urlencode($videoHd ?: $videoSd),
                     'audio' => 'api.php?action=download&filename=tiktok_audio.mp3&url=' . urlencode($audioUrl)
                 ]
-            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            exit;
+            ]);
         }
     }
 
-    echo json_encode([
+    sendJsonResponse([
         'status' => 'error',
         'message' => 'Không thể lấy video TikTok. Vui lòng kiểm tra lại liên kết hoặc thử lại sau.'
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
+    ]);
 }
 
 // -------------------------------------------------------------
@@ -287,7 +316,7 @@ if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
             $labels[] = '🎵 MP3 AUDIO';
             $medias['🎵 MP3 AUDIO'] = $finalVideo;
 
-            echo json_encode([
+            sendJsonResponse([
                 'status' => 'success',
                 'platform' => 'facebook',
                 'title' => $titleClean,
@@ -303,16 +332,14 @@ if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
                     'video' => 'api.php?action=download&filename=facebook_video.mp4&url=' . urlencode($finalVideo),
                     'audio' => 'api.php?action=download&filename=facebook_audio.mp3&url=' . urlencode($finalVideo)
                 ]
-            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            exit;
+            ]);
         }
     }
 
-    echo json_encode([
+    sendJsonResponse([
         'status' => 'error',
         'message' => 'Không tìm thấy video Facebook công khai hoặc video yêu cầu đăng nhập.'
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
+    ]);
 }
 
 // -------------------------------------------------------------
@@ -325,7 +352,7 @@ if (preg_match('/\.(mp4|mov|mp3|m4a|jpg|jpeg|png|webp)(\?.*)?$/i', $inputUrl, $e
     $icon = $isAudio ? '🎵' : ($isImage ? '🖼️' : '🎬');
     $lbl = $icon . ' ' . strtoupper($ext) . ' ORIGINAL';
 
-    echo json_encode([
+    sendJsonResponse([
         'status' => 'success',
         'platform' => 'direct',
         'title' => 'media_file_' . time(),
@@ -335,8 +362,7 @@ if (preg_match('/\.(mp4|mov|mp3|m4a|jpg|jpeg|png|webp)(\?.*)?$/i', $inputUrl, $e
         'video' => $isAudio ? '' : $inputUrl,
         'audio' => $isAudio ? $inputUrl : '',
         'thumbnail' => ''
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    exit;
+    ]);
 }
 
 // -------------------------------------------------------------
@@ -352,7 +378,7 @@ if (!empty($html) && preg_match('/<meta\s+property="og:video(?::secure_url)?"\s+
     }
     $titleClean = cleanTitle($titleText);
 
-    echo json_encode([
+    sendJsonResponse([
         'status' => 'success',
         'platform' => 'generic',
         'title' => $titleClean,
@@ -365,11 +391,10 @@ if (!empty($html) && preg_match('/<meta\s+property="og:video(?::secure_url)?"\s+
             '🎬 MP4 VIDEO' => $videoUrl,
             '🎵 MP3 AUDIO' => $videoUrl
         ]
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    exit;
+    ]);
 }
 
-echo json_encode([
+sendJsonResponse([
     'status' => 'error',
     'message' => 'Nền tảng này chưa được hỗ trợ hoặc liên kết không chứa video công khai.'
-], JSON_UNESCAPED_UNICODE);
+]);
