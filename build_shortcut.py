@@ -77,6 +77,7 @@ def build_workflow(shortcut_name="SnapAll"):
     u_media_url_act = uid()
     u_media_file    = uid()
     u_audio_named   = uid()
+    u_saved_file    = uid()
 
     # Group IDs
     g_no_input  = uid()
@@ -570,6 +571,8 @@ def build_workflow(shortcut_name="SnapAll"):
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.documentpicker.save",
         "WFWorkflowActionParameters": {
+            "UUID": u_saved_file,
+            "CustomOutputName": "Saved File",
             "WFFileStorageService": "iCloud Drive",
             "SelectionMode": "Save",
             "WFInput": act_out(u_audio_named, "audio_mp3")
@@ -577,7 +580,7 @@ def build_workflow(shortcut_name="SnapAll"):
     })
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
-        "WFWorkflowActionParameters": {"WFVariableName": "audio_files", "WFInput": act_out(u_audio_named, "audio_mp3")}
+        "WFWorkflowActionParameters": {"WFVariableName": "saved_files", "WFInput": act_out(u_saved_file, "Saved File")}
     })
 
     # [36] ELSE → Video hoặc Ảnh → Lưu trực tiếp vào Album Ảnh (Photos)
@@ -614,43 +617,30 @@ def build_workflow(shortcut_name="SnapAll"):
     # =========================================================================
 
     # [40] Menu hoàn tất kiểu Snap Video: "🥳 Download successful!!"
-    #      🎬 Open Video / 🖼️ Open Photo / 🎵 Open MP3 → Quick Look đúng file vừa tải
+    #      🖼️ Open Photos: Mở ứng dụng Photos trên iPhone (khi tải video / ảnh)
+    #      📁 Open Files: Mở file MP3 ở đúng nơi vừa lưu trong ứng dụng Tệp (Files)
     def done_menu(*items):
         add_menu(tok(DONE_TITLE), list(items) + [(CLOSE, [exit_act()])])
 
-    vid   = (OPEN_VIDEO, [preview("visual_files")])
-    # Ảnh: 1 ảnh → Quick Look; nhiều ảnh → mở ứng dụng Photos (ảnh mới nằm đầu "Gần đây")
-    def photo_actions():
-        u_cnt, g = uid(), uid()
-        return [
-            {"WFWorkflowActionIdentifier": "is.workflow.actions.count",
-             "WFWorkflowActionParameters": {"UUID": u_cnt, "WFCountType": "Items",
-                                            "WFInput": var_ref("visual_files")}},
-            {"WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
-             "WFWorkflowActionParameters": {
-                 "GroupingIdentifier": g, "WFControlFlowMode": 0,
-                 "WFCondition": 2,   # Is greater than
-                 "WFNumberValue": "1",
-                 "WFInput": {"Type": "Variable", "Variable": act_out(u_cnt, "Count")}}},
-            open_url("photos-redirect://"),
-            {"WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
-             "WFWorkflowActionParameters": {"GroupingIdentifier": g, "WFControlFlowMode": 1}},
-            preview("visual_files"),
-            {"WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
-             "WFWorkflowActionParameters": {"GroupingIdentifier": g, "WFControlFlowMode": 2}},
-        ]
-    photo = (OPEN_PHOTO, photo_actions())
-    mp3   = (OPEN_MP3,   [preview("audio_files")])
+    photos = (OPEN_PHOTOS, [open_url("photos-redirect://")])
+    files  = (OPEN_FILES, [
+        {
+            "WFWorkflowActionIdentifier": "is.workflow.actions.openin",
+            "WFWorkflowActionParameters": {
+                "WFOpenInAppIdentifier": "com.apple.DocumentsApp",
+                "WFOpenInAskWhenRun": False,
+                "WFInput": var_ref("saved_files")
+            }
+        }
+    ])
 
     if_selected_contains("🎵",
         lambda: if_selected_contains("🎬",
-            lambda: done_menu(vid, mp3),
+            lambda: done_menu(photos, files),
             lambda: if_selected_contains("🖼",
-                lambda: done_menu(photo, mp3),
-                lambda: done_menu(mp3))),
-        lambda: if_selected_contains("🎬",
-            lambda: done_menu(vid),
-            lambda: done_menu(photo)))
+                lambda: done_menu(photos, files),
+                lambda: done_menu(files))),
+        lambda: done_menu(photos))
 
     # ──────────────────────────────────────────────────────────────────────────
     all_content_classes = [
