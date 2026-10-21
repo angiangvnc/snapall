@@ -72,6 +72,7 @@ def build_workflow(shortcut_name="SnapAll"):
     u_b64           = uid()
     u_api_url       = uid()
     u_api_json      = uid()
+    u_api_dict      = uid()
     u_selected      = uid()
     u_media_url_act = uid()
     u_media_file    = uid()
@@ -366,12 +367,22 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # [21] Lưu kết quả API vào biến api_json (CỰC KỲ QUAN TRỌNG: để các lệnh sau đọc được dict)
+    # [21] Get Dictionary from Input (chuyển JSON Text từ API thành Dictionary object)
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.detect.dictionary",
+        "WFWorkflowActionParameters": {
+            "UUID": u_api_dict,
+            "CustomOutputName": "api_dict",
+            "WFInput": act_out(u_api_json, "api_json_raw")
+        }
+    })
+
+    # [22] Lưu kết quả API Dictionary vào biến api_json (CỰC KỲ QUAN TRỌNG: để các lệnh sau đọc được dict)
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
         "WFWorkflowActionParameters": {
             "WFVariableName": "api_json",
-            "WFInput": act_out(u_api_json, "api_json_raw")
+            "WFInput": act_out(u_api_dict, "api_dict")
         }
     })
 
