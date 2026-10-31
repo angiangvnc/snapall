@@ -1,0 +1,13 @@
+.DS_Store
+*.log
+node_modules/
+.idea/
+.vscode/
+.agents/
+AGENTS.md
+HUONG_DAN_CHI_TIET_SHORTCUT.md
+*_Source.shortcut
+leaf.der
+raw_pubkey.bin
+snap.aa
+Snap_Video.shortcut

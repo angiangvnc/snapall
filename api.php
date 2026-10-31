@@ -1,0 +1,517 @@
+<?php
+/**
+ * SnapAll & Snap Video PHP API
+ * Bộ bóc tách và phân giải video TikTok, Douyin, Facebook và đa nền tảng
+ * Tương thích chuẩn 100% với Apple Shortcuts (Phím tắt iOS/macOS) và Web Interface
+ */
+
+if (!headers_sent()) {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+}
+
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+if ($requestMethod === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+// -------------------------------------------------------------
+// 0. Bảo mật chống SSRF / Local File Read & Hỗ trợ Proxy Tải Xuống
+// -------------------------------------------------------------
+function isSafeRemoteUrl($url) {
+    if (!is_string($url) || empty($url)) return false;
+    $url = trim($url);
+    if (!filter_var($url, FILTER_VALIDATE_URL)) return false;
+
+    $parts = parse_url($url);
+    if (!$parts || empty($parts['scheme']) || empty($parts['host'])) return false;
+
+    $scheme = strtolower($parts['scheme']);
+    if (!in_array($scheme, ['http', 'https'], true)) return false;
+
+    $host = strtolower($parts['host']);
+    if (in_array($host, ['localhost', '127.0.0.1', '0.0.0.0', '::1'], true)) return false;
+    if (preg_match('/(\.local|\.internal|\.localhost|\.lan)$/i', $host)) return false;
+
+    if (filter_var($host, FILTER_VALIDATE_IP)) {
+        return (bool) filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+    }
+
+    $ips = @gethostbynamel($host);
+    if (empty($ips) || !is_array($ips)) return false;
+    foreach ($ips as $ip) {
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function getBaseApiUrl() {
+    $host = $_SERVER['HTTP_HOST'] ?? 'snapall.giaiphap.pro';
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+        || (!empty($_SERVER['HTTP_CF_VISITOR']) && strpos($_SERVER['HTTP_CF_VISITOR'], 'https') !== false)
+        || (strpos($host, 'giaiphap.pro') !== false);
+    $scheme = $isHttps ? 'https' : 'http';
+    return $scheme . '://' . $host . '/api.php';
+}
+
+function buildProxyDownloadUrl($rawUrl, $filename) {
+    if (empty($rawUrl)) return '';
+    $b64 = rtrim(strtr(base64_encode($rawUrl), '+/', '-_'), '=');
+    return getBaseApiUrl() . '?action=download&filename=' . rawurlencode($filename) . '&b64=' . rawurlencode($b64);
+}
+
+$action = $_GET['action'] ?? '';
+if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']))) {
+    $fileUrl = '';
+    if (!empty($_GET['b64'])) {
+        $b64 = strtr($_GET['b64'], '-_', '+/');
+        $pad = strlen($b64) % 4;
+        if ($pad > 0) $b64 .= str_repeat('=', 4 - $pad);
+        $decoded = base64_decode($b64, true);
+        if ($decoded !== false) {
+            $fileUrl = trim($decoded);
+        }
+    }
+    if (empty($fileUrl) && !empty($_GET['url'])) {
+        $fileUrl = trim($_GET['url']);
+    }
+
+    if (!isSafeRemoteUrl($fileUrl)) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Liên kết tải xuống không hợp lệ hoặc bị chặn vì lý do bảo mật.'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $filename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $_GET['filename'] ?? 'file');
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    $contentType = 'application/octet-stream';
+    if ($ext === 'mp4') $contentType = 'video/mp4';
+    elseif ($ext === 'mp3') $contentType = 'audio/mpeg';
+    elseif (in_array($ext, ['jpg', 'jpeg'])) $contentType = 'image/jpeg';
+    elseif ($ext === 'png') $contentType = 'image/png';
+    elseif ($ext === 'webp') $contentType = 'image/webp';
+
+    header('Content-Description: File Transfer');
+    header('Content-Type: ' . $contentType);
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Expires: 0');
+    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+    header('Pragma: public');
+
+    $ch = curl_init($fileUrl);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 90);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1');
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    if (defined('CURLOPT_PROTOCOLS')) {
+        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    }
+    curl_exec($ch);
+    curl_close($ch);
+    exit;
+}
+
+if (!headers_sent()) {
+    header('Content-Type: application/json; charset=utf-8');
+}
+
+// -------------------------------------------------------------
+// Versioning & Auto-Update Configuration
+// -------------------------------------------------------------
+$CURRENT_VERSION = '12.3';
+$UPDATE_URL = 'https://www.icloud.com/shortcuts/7e1ebed6e4c14e9fb13680581ab7a933';
+
+function sendJsonResponse(array $payload) {
+    global $CURRENT_VERSION, $UPDATE_URL;
+    $clientVersion = $_GET['v'] ?? $_GET['version'] ?? '';
+    $hasUpdate = (!empty($clientVersion) && version_compare($clientVersion, $CURRENT_VERSION, '<'));
+    
+    $payload['version'] = $CURRENT_VERSION;
+    $payload['has_update'] = $hasUpdate ? 'true' : 'false';
+    $payload['latest_version'] = $CURRENT_VERSION;
+    $payload['update_url'] = $UPDATE_URL;
+
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+if (isset($_GET['action']) && $_GET['action'] === 'check_update') {
+    $clientVersion = $_GET['v'] ?? $_GET['version'] ?? '1.0';
+    $hasUpdate = version_compare($clientVersion, $CURRENT_VERSION, '<');
+    sendJsonResponse([
+        'status' => 'success',
+        'has_update' => $hasUpdate ? 'true' : 'false',
+        'message' => $hasUpdate 
+            ? "Đã có bản cập nhật mới SnapAll v{$CURRENT_VERSION}!" 
+            : "Bạn đang sử dụng phiên bản mới nhất SnapAll v{$CURRENT_VERSION}."
+    ]);
+}
+
+// -------------------------------------------------------------
+// 1. Nhận & Làm sạch URL
+// -------------------------------------------------------------
+$inputUrl = '';
+
+// A. Hỗ trợ tham số b64 (từ Snap Video gốc)
+if (!empty($_GET['b64'])) {
+    $decoded = base64_decode($_GET['b64'], true);
+    if ($decoded !== false) {
+        $inputUrl = trim($decoded);
+    }
+}
+
+// B. Hỗ trợ tham số url
+if (empty($inputUrl)) {
+    $inputUrl = trim($_GET['url'] ?? $_POST['url'] ?? '');
+}
+
+// C. Xử lý nếu url nằm trong chuỗi query string có nhiều dấu ? và &
+if (empty($inputUrl) && !empty($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUERY_STRING'], 'url=') !== false) {
+    $rawPart = substr($_SERVER['QUERY_STRING'], strpos($_SERVER['QUERY_STRING'], 'url=') + 4);
+    $inputUrl = trim(urldecode($rawPart));
+}
+
+// D. Tách URL sạch từ văn bản nếu người dùng dán cả đoạn caption dài
+if (!empty($inputUrl) && preg_match('/https?:\/\/[^\s]+/i', $inputUrl, $matchUrl)) {
+    $inputUrl = $matchUrl[0];
+}
+
+if (empty($inputUrl) || !isSafeRemoteUrl($inputUrl)) {
+    sendJsonResponse([
+        'status' => 'error',
+        'message' => 'Vui lòng cung cấp liên kết hợp lệ (url hoặc b64) video TikTok hoặc Facebook.'
+    ]);
+}
+
+// Hàm dọn dẹp tiêu đề file sạch
+function cleanTitle($str) {
+    if (!$str) return 'video';
+    $clean = preg_replace('/[\r\n\t]+/', ' ', $str);
+    $clean = preg_replace('/[\\\\\\/:\\*\\?"<>\\|#%&{}<>\\$\\!\'`@\\+~]+/', '', $clean);
+    $clean = preg_replace('/\\s+/', ' ', $clean);
+    $clean = trim($clean);
+    $clean = $clean ?: 'video';
+    if (function_exists('mb_substr')) {
+        return mb_substr($clean, 0, 60, 'UTF-8');
+    }
+    return preg_match('/^.{0,60}/us', $clean, $cut) ? $cut[0] : substr($clean, 0, 60);
+}
+
+// Hàm gửi request cURL
+function fetchCurl($url, $customHeaders = [], $followRedirect = true) {
+    if (!isSafeRemoteUrl($url)) {
+        return ['code' => 403, 'body' => '', 'url' => $url];
+    }
+    $ch = curl_init();
+    $defaultHeaders = [
+        'User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language: vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+    ];
+    $headers = array_merge($defaultHeaders, $customHeaders);
+
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $followRedirect);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    if (defined('CURLOPT_PROTOCOLS')) {
+        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    }
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $effectiveUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+    if (PHP_VERSION_ID < 80500) {
+        @curl_close($ch);
+    }
+
+    return [
+        'code' => $httpCode,
+        'body' => $response,
+        'url'  => $effectiveUrl
+    ];
+}
+
+// -------------------------------------------------------------
+// 2. Xử lý TIKTOK & DOUYIN
+// -------------------------------------------------------------
+if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
+    $apiUrl = 'https://www.tikwm.com/api/?hd=1&url=' . urlencode($inputUrl);
+    $res = fetchCurl($apiUrl);
+
+    if ($res['code'] === 200 && !empty($res['body'])) {
+        $data = json_decode($res['body'], true);
+        if (isset($data['code']) && $data['code'] === 0 && isset($data['data'])) {
+            $item = $data['data'];
+            
+            $author = $item['author']['nickname'] ?? ($item['author']['unique_id'] ?? 'TikTok Creator');
+            $rawTitle = !empty($item['title']) ? $item['title'] : ('TikTok by ' . $author);
+            $titleText = cleanTitle($rawTitle);
+            
+            $images = $item['images'] ?? [];
+            $isSlideshow = (!empty($images) && is_array($images) && count($images) > 0);
+
+            $audioUrl = $item['music'] ?? '';
+            if (empty($audioUrl) && !empty($item['music_info']['play'])) {
+                $audioUrl = $item['music_info']['play'];
+            }
+
+            // Nếu là album ảnh slideshow, tikwm trả play/hdplay là file audio chứ không phải video
+            if ($isSlideshow) {
+                $videoHd = '';
+                $videoSd = '';
+                $videoWm = '';
+            } else {
+                $videoHd = !empty($item['hdplay']) ? $item['hdplay'] : ($item['play'] ?? '');
+                $videoSd = $item['play'] ?? '';
+                $videoWm = $item['wmplay'] ?? '';
+            }
+
+            $labels = [];
+            $medias = [];
+            // Đồng nhất 100% link tải trong medias qua cùng domain proxy (snapall.giaiphap.pro)
+            // để iOS Shortcuts chỉ hỏi quyền Lưu vào Album Ảnh đúng 1 lần duy nhất ("Always Allow")!
+            $add = function ($lbl, $link, $fname) use (&$labels, &$medias) {
+                if (!empty($link)) {
+                    $labels[] = $lbl;
+                    $medias[$lbl] = buildProxyDownloadUrl($link, $fname);
+                }
+            };
+
+            // Nếu là album ảnh slideshow
+            if ($isSlideshow) {
+                foreach ($images as $idx => $img) {
+                    $num = $idx + 1;
+                    $add('🖼️ JPG HD ' . $num, $img, $titleText . '_anh_' . $num . '.jpg');
+                }
+            } else {
+                $add('🎬 MP4 HD', $videoSd ?: $videoHd, $titleText . '_HD.mp4');
+                if (!empty($videoHd) && $videoHd !== $videoSd) {
+                    $add('🎬 MP4 FULL HD', $videoHd, $titleText . '_FullHD.mp4');
+                }
+                $add('🎬 MP4 WATERMARK', $videoWm, $titleText . '_Watermark.mp4');
+            }
+
+            // Âm thanh MP3
+            if (!empty($audioUrl)) {
+                $add('🎵 MP3 128KBPS', $audioUrl, $titleText . '_audio.mp3');
+            }
+
+            $downloadProxy = [];
+            if (!empty($audioUrl)) {
+                $downloadProxy['audio'] = buildProxyDownloadUrl($audioUrl, $titleText . '_audio.mp3');
+            }
+            if (!$isSlideshow && (!empty($videoHd) || !empty($videoSd))) {
+                $downloadProxy['video'] = buildProxyDownloadUrl($videoHd ?: $videoSd, $titleText . '_video.mp4');
+            }
+
+            sendJsonResponse([
+                'status' => 'success',
+                'platform' => 'tiktok',
+                'type' => $isSlideshow ? 'slideshow' : 'video',
+                'is_slideshow' => $isSlideshow,
+                'title' => $titleText,
+                'author' => $author,
+                'thumbnail' => $item['cover'] ?? (!empty($images) ? $images[0] : ''),
+                'video' => $videoHd ?: $videoSd,
+                'video_hd' => $videoHd,
+                'video_sd' => $videoSd,
+                'audio' => $audioUrl,
+                'images' => $images,
+                'image_count' => count($images),
+                'menu_title' => 'Choose media:',
+                'labels' => $labels,
+                'medias' => $medias,
+                'download_proxy' => $downloadProxy
+            ]);
+        }
+    }
+
+    sendJsonResponse([
+        'status' => 'error',
+        'message' => 'Không thể lấy video TikTok. Vui lòng kiểm tra lại liên kết hoặc thử lại sau.'
+    ]);
+}
+
+// -------------------------------------------------------------
+// 3. Xử lý FACEBOOK (Reels, Watch, Video Posts)
+// -------------------------------------------------------------
+if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
+    $desktopHeaders = [
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language: en-US,en;q=0.9',
+        'Sec-Fetch-Dest: document',
+        'Sec-Fetch-Mode: navigate',
+        'Sec-Fetch-Site: none',
+        'Upgrade-Insecure-Requests: 1'
+    ];
+
+    $res = fetchCurl($inputUrl, $desktopHeaders);
+    $html = $res['body'] ?? '';
+
+    if (!empty($html)) {
+        $cleanHtml = str_replace(['&quot;', '&amp;'], ['"', '&'], $html);
+
+        // Lấy ID video từ URL cuối (share/v/... redirect sang /reel/{id})
+        $videoId = '';
+        if (preg_match('~/(?:reel|videos)/(\d{8,})|[?&]v=(\d{8,})~', ($res['url'] ?? '') . ' ' . $inputUrl, $idm)) {
+            $videoId = !empty($idm[1]) ? $idm[1] : ($idm[2] ?? '');
+        }
+
+        // Ưu tiên link nằm gần ID video (trang reel chứa cả các reel gợi ý)
+        $pickFbUrl = function (array $keys) use ($cleanHtml, $videoId) {
+            $first = '';
+            foreach ($keys as $key) {
+                if (!preg_match_all('/"?' . preg_quote($key, '/') . '"?:"((?:[^"\\\\]|\\\\.)+)"/', $cleanHtml, $all, PREG_OFFSET_CAPTURE)) {
+                    continue;
+                }
+                foreach ($all[1] as $hit) {
+                    $url = json_decode('"' . $hit[0] . '"');
+                    if (!$url) $url = str_replace('\\/', '/', $hit[0]);
+                    if (!preg_match('~^https?://~', $url)) continue;
+                    if ($first === '') $first = $url;
+                    if ($videoId === '') return $url;
+                    $seg = substr($cleanHtml, max(0, $hit[1] - 3000), 6000);
+                    if (strpos($seg, $videoId) !== false) return $url;
+                }
+            }
+            return $first;
+        };
+
+        $hd = $pickFbUrl(['browser_native_hd_url', 'playable_url_quality_hd', 'hd_src_no_ratelimit', 'hd_src']);
+        $sd = $pickFbUrl(['browser_native_sd_url', 'playable_url', 'sd_src_no_ratelimit', 'sd_src']);
+
+        $finalVideo = $hd ?: $sd;
+
+        if (!empty($finalVideo)) {
+            $titleText = 'Facebook Video';
+            if (preg_match('/<meta\s+property="og:title"\s+content="([^"]*)"/i', $cleanHtml, $tm)) {
+                $titleText = $tm[1];
+            } elseif (preg_match('/<title>(.*?)<\/title>/i', $cleanHtml, $tm)) {
+                $titleText = $tm[1];
+            }
+            $titleText = html_entity_decode($titleText, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $titleText = preg_replace('/^[^|]*\b(views|reactions|lượt xem)\b[^|]*\|\s*/iu', '', $titleText);
+            $titleClean = cleanTitle($titleText);
+
+            $thumb = '';
+            if (preg_match('/<meta\s+property="og:image"\s+content="([^"]*)"/i', $cleanHtml, $im)) {
+                $thumb = $im[1];
+            }
+
+            $labels = [];
+            $medias = [];
+
+            if (!empty($hd)) {
+                $labels[] = '🎬 MP4 HD';
+                $medias['🎬 MP4 HD'] = buildProxyDownloadUrl($hd, $titleClean . '_HD.mp4');
+            }
+            if (!empty($sd) && (empty($hd) || $sd !== $hd)) {
+                $labels[] = '🎬 MP4 SD';
+                $medias['🎬 MP4 SD'] = buildProxyDownloadUrl($sd, $titleClean . '_SD.mp4');
+            }
+            $labels[] = '🎵 MP3 AUDIO';
+            $medias['🎵 MP3 AUDIO'] = buildProxyDownloadUrl($finalVideo, $titleClean . '_audio.mp3');
+
+            sendJsonResponse([
+                'status' => 'success',
+                'platform' => 'facebook',
+                'title' => $titleClean,
+                'thumbnail' => $thumb,
+                'video' => $finalVideo,
+                'video_hd' => $hd ?: $sd,
+                'video_sd' => $sd ?: $hd,
+                'audio' => $finalVideo,
+                'menu_title' => 'Choose media:',
+                'labels' => $labels,
+                'medias' => $medias,
+                'download_proxy' => [
+                    'video' => buildProxyDownloadUrl($finalVideo, $titleClean . '_video.mp4'),
+                    'audio' => buildProxyDownloadUrl($finalVideo, $titleClean . '_audio.mp3')
+                ]
+            ]);
+        }
+    }
+
+    sendJsonResponse([
+        'status' => 'error',
+        'message' => 'Không tìm thấy video Facebook công khai hoặc video yêu cầu đăng nhập.'
+    ]);
+}
+
+// -------------------------------------------------------------
+// 4. Link Tệp Media Trực Tiếp (Direct File URL)
+// -------------------------------------------------------------
+if (preg_match('/\.(mp4|mov|mp3|m4a|jpg|jpeg|png|webp)(\?.*)?$/i', $inputUrl, $extM)) {
+    $ext = strtolower($extM[1]);
+    $isAudio = in_array($ext, ['mp3', 'm4a']);
+    $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp']);
+    $icon = $isAudio ? '🎵' : ($isImage ? '🖼️' : '🎬');
+    $lbl = $icon . ' ' . strtoupper($ext) . ' ORIGINAL';
+    $titleDirect = 'media_file_' . time();
+
+    sendJsonResponse([
+        'status' => 'success',
+        'platform' => 'direct',
+        'title' => $titleDirect,
+        'menu_title' => 'Choose media:',
+        'labels' => [$lbl],
+        'medias' => [$lbl => buildProxyDownloadUrl($inputUrl, $titleDirect . '.' . $ext)],
+        'video' => $isAudio ? '' : $inputUrl,
+        'audio' => $isAudio ? $inputUrl : '',
+        'thumbnail' => ''
+    ]);
+}
+
+// -------------------------------------------------------------
+// 5. Fallback og:video Web
+// -------------------------------------------------------------
+$res = fetchCurl($inputUrl);
+$html = $res['body'] ?? '';
+if (!empty($html) && preg_match('/<meta\s+property="og:video(?::secure_url)?"\s+content="([^"]*)"/i', $html, $vm)) {
+    $videoUrl = str_replace('&amp;', '&', $vm[1]);
+    $titleText = 'Web Video';
+    if (preg_match('/<meta\s+property="og:title"\s+content="([^"]*)"/i', $html, $tm)) {
+        $titleText = $tm[1];
+    }
+    $titleClean = cleanTitle($titleText);
+
+    sendJsonResponse([
+        'status' => 'success',
+        'platform' => 'generic',
+        'title' => $titleClean,
+        'thumbnail' => '',
+        'video' => $videoUrl,
+        'audio' => $videoUrl,
+        'menu_title' => 'Choose media:',
+        'labels' => ['🎬 MP4 VIDEO', '🎵 MP3 AUDIO'],
+        'medias' => [
+            '🎬 MP4 VIDEO' => buildProxyDownloadUrl($videoUrl, $titleClean . '.mp4'),
+            '🎵 MP3 AUDIO' => buildProxyDownloadUrl($videoUrl, $titleClean . '.mp3')
+        ]
+    ]);
+}
+
+sendJsonResponse([
+    'status' => 'error',
+    'message' => 'Nền tảng này chưa được hỗ trợ hoặc liên kết không chứa video công khai.'
+]);

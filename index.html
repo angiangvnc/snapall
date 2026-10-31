@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapAll - Tải Video TikTok & Facebook Không Logo, Trích Xuất Âm Thanh</title>
+    <meta name="description" content="Công cụ tải video TikTok không watermark, tải video Facebook HD và trích xuất âm thanh MP3 nhanh chóng, hỗ trợ Phím tắt iPhone.">
+    <meta name="author" content="Giải Pháp Pro - giaiphap.pro">
+    <meta name="copyright" content="© 2026 giaiphap.pro">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=12.3">
+</head>
+<body>
+    <div class="background-glow top-left"></div>
+    <div class="background-glow bottom-right"></div>
+
+    <header class="header">
+        <div class="container header-container">
+            <div class="brand">
+                <div class="brand-icon">⚡️</div>
+                <div class="brand-text">
+                    <h1>SnapAll</h1>
+                </div>
+            </div>
+            <a href="#shortcut-section" class="btn-outline-header">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                <span>Cài Phím Tắt iPhone</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero text-center">
+                <div class="pill-badge">
+                    <span class="pulse-dot"></span>
+                    <span>Hỗ trợ TikTok No Watermark & Facebook HD</span>
+                </div>
+                <h2 class="hero-title">Tải Video Không Logo & Trích Xuất Âm Thanh</h2>
+                <p class="hero-subtitle">Hoạt động mượt mà trên iPhone qua Phím tắt (Shortcuts) Share Sheet hoặc dán link trực tiếp trên web.</p>
+
+                <!-- Input Box -->
+                <div class="download-card">
+                    <div class="input-group">
+                        <div class="input-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        </div>
+                        <input type="text" id="videoUrl" placeholder="Dán liên kết TikTok hoặc Facebook vào đây..." autocomplete="off">
+                        <button type="button" id="btnPaste" class="btn-paste" title="Dán từ bộ nhớ tạm">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                            <span>Dán</span>
+                        </button>
+                        <button type="button" id="btnSubmit" class="btn-primary">
+                            <span class="btn-text">Bắt đầu</span>
+                            <span class="btn-loader" style="display: none;"></span>
+                        </button>
+                    </div>
+
+                    <!-- Platform Tags -->
+                    <div class="platform-support">
+                        <span class="platform-tag tiktok">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-5.201 1.743l-.068-.102a2.895 2.895 0 0 1 2.373-4.509c.35 0 .685.063.996.177V9.324a6.34 6.34 0 0 0-1-.079 6.34 6.34 0 0 0-6.335 6.34 6.34 6.34 0 0 0 6.335 6.34 6.337 6.337 0 0 0 6.345-6.262V9.351a8.175 8.175 0 0 0 4.77 1.529V7.435a4.776 4.776 0 0 1-1-.749z"/></svg>
+                            TikTok Không Logo
+                        </span>
+                        <span class="platform-tag facebook">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            Facebook HD / Reels
+                        </span>
+                        <span class="platform-tag audio">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                            Tách Âm Thanh MP3
+                        </span>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="resultCard" class="result-card" style="display: none;">
+                        <div class="result-content">
+                            <div class="result-media">
+                                <img id="resThumbnail" src="" alt="Thumbnail" class="res-thumb">
+                                <span id="resPlatformBadge" class="res-badge">TIKTOK</span>
+                            </div>
+                            <div class="result-info">
+                                <h3 id="resTitle" class="res-title">Tiêu đề video</h3>
+                                <p id="resAuthor" class="res-author">Tác giả: <span>-</span></p>
+                                
+                                <!-- Video Download Buttons (chỉ hiện khi là Video thông thường) -->
+                                <div id="videoActionsSection" class="download-actions">
+                                    <a id="btnDownloadHd" href="#" target="_blank" class="action-btn hd">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        <span>Tải Video HD (Không Logo)</span>
+                                    </a>
+                                    <a id="btnDownloadSd" href="#" target="_blank" class="action-btn sd" style="display: none;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        <span>Tải Video SD</span>
+                                    </a>
+                                    <a id="btnDownloadAudio" href="#" target="_blank" class="action-btn audio">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                                        <span>Trích Xuất Âm Thanh (MP3)</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slideshow / Album Section (hiện khi phát hiện nhiều ảnh và file MP3) -->
+                        <div id="slideshowSection" class="slideshow-section" style="display: none;">
+                            <div class="slideshow-control-bar">
+                                <div class="slideshow-info-header">
+                                    <div class="slideshow-badge-tag">
+                                        <span class="badge-dot"></span>
+                                        <span id="slideshowBadgeText">Album Ảnh & Âm Thanh TikTok</span>
+                                    </div>
+                                    <h4 class="slideshow-subtitle">Chọn các tệp cần tải về máy:</h4>
+                                </div>
+
+                                <div class="slideshow-toolbar">
+                                    <!-- Checkbox Chọn tất cả -->
+                                    <label class="select-all-box" for="selectAllCheckbox">
+                                        <input type="checkbox" id="selectAllCheckbox" checked>
+                                        <span class="custom-checkbox-ui"></span>
+                                        <span class="select-all-title">Chọn tất cả</span>
+                                        <span id="selectedCountBadge" class="count-pill">0/0</span>
+                                    </label>
+
+                                    <!-- Nút thao tác hàng loạt -->
+                                    <div class="batch-action-buttons">
+                                        <button type="button" id="btnDownloadZip" class="btn-bulk zip" title="Nén tất cả tệp đã chọn thành 1 file ZIP duy nhất">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                            <span>Tải các tệp đã chọn (.ZIP)</span>
+                                        </button>
+                                        <button type="button" id="btnDownloadDirect" class="btn-bulk direct" title="Tải trực tiếp từng tệp">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                                            <span>Tải lần lượt</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Thanh tiến trình tải / nén ZIP -->
+                                <div id="zipProgressWrapper" class="zip-progress-wrapper" style="display: none;">
+                                    <div class="zip-progress-info">
+                                        <span id="zipProgressText">Đang chuẩn bị đóng gói...</span>
+                                        <span id="zipProgressPercent">0%</span>
+                                    </div>
+                                    <div class="zip-progress-track">
+                                        <div id="zipProgressBar" class="zip-progress-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Danh sách các tệp media có checkbox ở phần đầu -->
+                            <div id="mediaItemsContainer" class="media-items-grid">
+                                <!-- Rendered dynamically by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="errorAlert" class="error-alert" style="display: none;"></div>
+                </div>
+            </section>
+
+            <!-- Shortcut Installation Section -->
+            <section id="shortcut-section" class="shortcut-box">
+                <div class="shortcut-header">
+                    <div class="shortcut-icon-wrap">
+                        <svg class="shortcuts-app-icon" viewBox="0 0 48 48" aria-label="Shortcuts" role="img">
+                            <defs>
+                                <linearGradient id="scGradA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5f8f"/><stop offset="1" stop-color="#ff2d55"/></linearGradient>
+                                <linearGradient id="scGradB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5ac8fa"/><stop offset="1" stop-color="#5856d6"/></linearGradient>
+                            </defs>
+                            <rect width="48" height="48" rx="11" fill="#111827"/>
+                            <rect x="9" y="9" width="22" height="22" rx="6" transform="rotate(-12 20 20)" fill="url(#scGradB)" opacity=".95"/>
+                            <rect x="17" y="17" width="22" height="22" rx="6" transform="rotate(-12 28 28)" fill="url(#scGradA)" opacity=".95"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2>Phím Tắt SnapAll cho iPhone (iOS Shortcuts)</h2>
+                        <p>Tải video trực tiếp từ nút <strong>Chia sẻ (Share Sheet)</strong> trong app TikTok hoặc Facebook mà không cần mở trình duyệt!</p>
+                    </div>
+                </div>
+
+                <div class="shortcut-actions-bar">
+                    <a id="btnInstallIcloud" href="https://www.icloud.com/shortcuts/7e1ebed6e4c14e9fb13680581ab7a933" target="_blank" class="btn-shortcut-download" title="Cài đặt phím tắt chính thức qua iCloud 1 chạm">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Cài Đặt Phím Tắt SnapAll v12.3 (iCloud)</span>
+                    </a>
+                    <a id="btnInstallShortcut" href="SnapAll.shortcut" download="SnapAll.shortcut" class="btn-guide" title="Tải trực tiếp file phím tắt .shortcut đã ký số Apple">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                        <span>Tải File .shortcut</span>
+                    </a>
+                    <a href="HUONG_DAN_TAO_SHORTCUT.md" target="_blank" class="btn-guide">
+                        <span>📖 Hướng Dẫn Chi Tiết</span>
+                    </a>
+                </div>
+
+                <!-- 3 Steps Guide -->
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-num">1</div>
+                        <h4>Tải & Cài Đặt</h4>
+                        <p>Nhấn nút <strong>Cài Đặt Phím Tắt</strong> trên iPhone ➔ ứng dụng Phím tắt tự mở ➔ nhấn <strong>Thêm phím tắt</strong>.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-num">2</div>
+                        <h4>Bấm Nút Chia Sẻ</h4>
+                        <p>Trong ứng dụng TikTok hoặc Facebook, mở video muốn tải và nhấn nút <strong>Chia sẻ (Share)</strong> ➔ chọn <strong>SnapAll</strong>.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-num">3</div>
+                        <h4>Chọn Lưu Video / Nhạc</h4>
+                        <p>Chọn <strong>🎬 Tải Video HD</strong> (tự động lưu vào Cuộn Camera) hoặc <strong>🎵 Trích xuất Âm thanh</strong> (lưu vào Tệp).</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container text-center">
+            <p>&copy; 2026 <a href="https://giaiphap.pro" target="_blank" rel="noopener" class="footer-link">Giải Pháp Pro</a> &bull; SnapAll Downloader &bull; All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Image Lightbox Modal Preview -->
+    <div id="imageLightbox" class="lightbox-modal" style="display: none;" aria-hidden="true" role="dialog">
+        <div class="lightbox-overlay" id="lightboxOverlay"></div>
+        <div class="lightbox-content">
+            <button type="button" class="lightbox-close-btn" id="lightboxClose" title="Đóng preview">&times;</button>
+            <div class="lightbox-img-wrap">
+                <img id="lightboxImg" src="" alt="Xem ảnh phóng to">
+            </div>
+            <div class="lightbox-toolbar">
+                <span id="lightboxCaption" class="lightbox-caption">Ảnh TikTok HD</span>
+                <a id="lightboxDownloadBtn" href="#" class="btn-lightbox-download" target="_blank" download>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Tải ảnh này</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSZip for Client-side Fast Batch Download -->
+    <script src="jszip.min.js"></script>
+    <script>
+        // Fallback CDN nếu file local bị chặn hoặc không tồn tại
+        if (typeof JSZip === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"><\/script>');
+        }
+    </script>
+    <script src="app.js?v=12.3"></script>
+</body>
+</html>
