@@ -16,7 +16,7 @@ import time
 import re
 
 API_URL = "https://snapall.giaiphap.pro/api/parse"
-VERSION = "12.3"
+VERSION = "12.4"
 UPDATE_URL = "https://www.icloud.com/shortcuts/7e1ebed6e4c14e9fb13680581ab7a933"
 
 
@@ -487,25 +487,72 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # [27] choosefromlist: Hiện danh sách labels cho user chọn 1 chạm trực tiếp (không dùng checkbox, bấm vào dòng nào lưu dòng đó)
+    # [27] Phân nhánh chọn Media thông minh theo loại nội dung:
+    #      - Nếu là Ảnh / Slideshow (api_json["type"] == "slideshow", như Ảnh 2): Bật checkbox và chọn sẵn tất cả (SelectAllInitially = True)
+    #      - Nếu là Video (như Ảnh 1): Tắt checkbox (SelectMultiple = False), bấm 1 chạm vào dòng nào tải ngay dòng đó
+    g_is_slideshow = uid()
+    u_selected_multi = uid()
+    u_selected_single = uid()
+
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_is_slideshow,
+            "WFControlFlowMode": 0,
+            "WFCondition": 4,   # Is equal to
+            "WFConditionalActionString": "slideshow",
+            "WFInput": {
+                "Type": "Variable",
+                "Variable": var_ref("api_json", [agg_dict(), {"Type": "WFDictionaryValueVariableAggrandizement", "DictionaryKey": "type"}, agg_str()])
+            }
+        }
+    })
+    # Nhánh 1: Slideshow / Ảnh → Có checkbox và được check sẵn tất cả
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.choosefromlist",
         "WFWorkflowActionParameters": {
-            "UUID": u_selected,
-            "CustomOutputName": "selected",
+            "UUID": u_selected_multi,
+            "CustomOutputName": "selected_multi",
+            "WFChooseFromListActionPrompt": tok("Choose media:"),
+            "WFChooseFromListActionSelectMultiple": True,
+            "WFChooseFromListActionSelectAllInitially": True,
+            "WFChooseFromListActionSelectAll": True,
+            "WFInput": var_ref("api_json", agg_dict_key("labels"))
+        }
+    })
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "selected",
+            "WFInput": act_out(u_selected_multi, "selected_multi")
+        }
+    })
+    # Nhánh 2 (ELSE): Video → Không dùng checkbox, chọn 1 chạm trực tiếp
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {"GroupingIdentifier": g_is_slideshow, "WFControlFlowMode": 1}
+    })
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.choosefromlist",
+        "WFWorkflowActionParameters": {
+            "UUID": u_selected_single,
+            "CustomOutputName": "selected_single",
             "WFChooseFromListActionPrompt": tok("Choose media:"),
             "WFChooseFromListActionSelectMultiple": False,
             "WFInput": var_ref("api_json", agg_dict_key("labels"))
         }
     })
-
-    # [28] Lưu mục đã chọn vào biến selected
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
         "WFWorkflowActionParameters": {
             "WFVariableName": "selected",
-            "WFInput": act_out(u_selected, "selected")
+            "WFInput": act_out(u_selected_single, "selected_single")
         }
+    })
+    # END IF is_slideshow
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {"GroupingIdentifier": g_is_slideshow, "WFControlFlowMode": 2}
     })
 
     # [29] IF selected không có giá trị (người dùng bấm Cancel) → Exit
@@ -525,21 +572,40 @@ def build_workflow(shortcut_name="SnapAll"):
     })
 
     # =========================================================================
-    # PHASE 4: TẢI FILE ĐÃ CHỌN VÀ LƯU VÀO THIẾT BỊ (1 LẦN DUY NHẤT - KHÔNG LẶP)
+    # PHASE 4: TẢI CÁC FILE ĐÃ CHỌN VÀ LƯU VÀO THIẾT BỊ
     # =========================================================================
 
-    # [30] Lấy link tải: media_url = medias[selected]
+    # [30] REPEAT for each (selected)
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.repeat.each",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_each,
+            "WFControlFlowMode": 0,
+            "WFInput": var_ref("selected")
+        }
+    })
+
+    # [31] Set label_now = Repeat Item
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionParameters": {
+            "WFVariableName": "label_now",
+            "WFInput": {"Value": {"VariableName": "Repeat Item", "Type": "Variable"}, "WFSerializationType": "WFTextTokenAttachment"}
+        }
+    })
+
+    # [32] Lấy link tải: media_url = medias[label_now]
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
         "WFWorkflowActionParameters": {
             "UUID": u_media_url_act,
             "CustomOutputName": "media_url",
-            "WFDictionaryKey": tok("\ufffc", {"{0, 1}": {"VariableName": "selected", "Type": "Variable"}}),
+            "WFDictionaryKey": tok("\ufffc", {"{0, 1}": {"VariableName": "label_now", "Type": "Variable"}}),
             "WFInput": var_ref("medias")
         }
     })
 
-    # [31] Tải file media về máy (qua cùng domain snapall.giaiphap.pro để iOS nhớ quyền Always Allow vĩnh viễn)
+    # [33] Tải file media về máy (qua cùng domain snapall.giaiphap.pro để iOS nhớ quyền Always Allow vĩnh viễn)
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
         "WFWorkflowActionParameters": {
@@ -568,7 +634,7 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # [32] IF selected chứa ký hiệu "🎵" (Âm thanh MP3) → Đổi tên đuôi .mp3 & Lưu vào Tệp (Files)
+    # [34] IF label_now chứa ký hiệu "🎵" (Âm thanh MP3) → Đổi tên đuôi .mp3 & Lưu vào Tệp (Files)
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {
@@ -576,10 +642,10 @@ def build_workflow(shortcut_name="SnapAll"):
             "WFControlFlowMode": 0,
             "WFCondition": 99,   # Contains
             "WFConditionalActionString": "🎵",
-            "WFInput": {"Type": "Variable", "Variable": var_ref("selected", [agg_str()])}
+            "WFInput": {"Type": "Variable", "Variable": var_ref("label_now", [agg_str()])}
         }
     })
-    # [33] Đổi tên tệp bắt buộc có phần mở rộng .mp3: {title}.mp3
+    # [35] Đổi tên tệp bắt buộc có phần mở rộng .mp3: {title}.mp3
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.setitemname",
         "WFWorkflowActionParameters": {
@@ -596,7 +662,7 @@ def build_workflow(shortcut_name="SnapAll"):
             "WFInput": act_out(u_media_file, "media_file")
         }
     })
-    # [34] Lưu file âm thanh (.mp3) vào Files
+    # [36] Lưu file âm thanh (.mp3) vào Files
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.documentpicker.save",
         "WFWorkflowActionParameters": {
@@ -608,33 +674,59 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
     A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+        "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
         "WFWorkflowActionParameters": {"WFVariableName": "saved_files", "WFInput": act_out(u_saved_file, "Saved File")}
     })
 
-    # [35] ELSE → Video hoặc Ảnh → Lưu trực tiếp vào Album Ảnh (Photos) 1 lần duy nhất
+    # [37] ELSE → Video hoặc Ảnh → Gom vào danh sách visual_files
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {"GroupingIdentifier": g_is_audio, "WFControlFlowMode": 1}
     })
     A.append({
-        "WFWorkflowActionIdentifier": "is.workflow.actions.savetocameraroll",
-        "WFWorkflowActionParameters": {
-            "WFInput": act_out(u_media_file, "media_file")
-        }
+        "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+        "WFWorkflowActionParameters": {"WFVariableName": "visual_files", "WFInput": act_out(u_media_file, "media_file")}
     })
 
-    # [36] END IF is_audio
+    # [38] END IF is_audio
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
         "WFWorkflowActionParameters": {"GroupingIdentifier": g_is_audio, "WFControlFlowMode": 2}
+    })
+
+    # [39] END REPEAT
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.repeat.each",
+        "WFWorkflowActionParameters": {"GroupingIdentifier": g_each, "WFControlFlowMode": 2}
+    })
+
+    # [40] Lưu toàn bộ Ảnh / Video vào Album Ảnh (Photos) đúng 1 lần duy nhất ngoài vòng lặp!
+    g_has_visual = uid()
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {
+            "GroupingIdentifier": g_has_visual,
+            "WFControlFlowMode": 0,
+            "WFCondition": 100,  # Has any value
+            "WFInput": {"Type": "Variable", "Variable": var_ref("visual_files")}
+        }
+    })
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.savetocameraroll",
+        "WFWorkflowActionParameters": {
+            "WFInput": var_ref("visual_files")
+        }
+    })
+    A.append({
+        "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+        "WFWorkflowActionParameters": {"GroupingIdentifier": g_has_visual, "WFControlFlowMode": 2}
     })
 
     # =========================================================================
     # PHASE 5: THÔNG BÁO HOÀN TẤT
     # =========================================================================
 
-    # [37] Menu hoàn tất kiểu Snap Video: "🥳 Download successful!!"
+    # [41] Menu hoàn tất kiểu Snap Video: "🥳 Download successful!!"
     #      🖼️ Open Photos: Mở ứng dụng Photos trên iPhone (khi tải video / ảnh)
     #      📁 Open Files: Mở file MP3 ở đúng nơi vừa lưu trong ứng dụng Tệp (Files)
     def done_menu(*items):
@@ -653,7 +745,11 @@ def build_workflow(shortcut_name="SnapAll"):
     ])
 
     if_selected_contains("🎵",
-        lambda: done_menu(files),
+        lambda: if_selected_contains("🎬",
+            lambda: done_menu(photos, files),
+            lambda: if_selected_contains("🖼",
+                lambda: done_menu(photos, files),
+                lambda: done_menu(files))),
         lambda: done_menu(photos))
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -832,10 +928,22 @@ def sync_version_files(version):
             g_content = f.read()
         g_content = re.sub(r'SnapAll v[0-9\.]+ Pro', f'SnapAll v{version} Pro', g_content)
         g_content = re.sub(r'SnapAll Pro v[0-9\.]+', f'SnapAll Pro v{version}', g_content)
+        g_content = re.sub(r'SnapAll v[0-9\.]+', f'SnapAll v{version}', g_content)
         g_content = re.sub(r'https://www\.icloud\.com/shortcuts/[a-zA-Z0-9]+', UPDATE_URL, g_content)
         with open(guide_path, "w", encoding="utf-8") as f:
             f.write(g_content)
         print(f"🔄 Đã đồng bộ HUONG_DAN_TAO_SHORTCUT.md -> v{version}")
+
+    # 3. Update README.md
+    readme_path = os.path.join(base_dir, "README.md")
+    if os.path.exists(readme_path):
+        with open(readme_path, "r", encoding="utf-8") as f:
+            r_content = f.read()
+        r_content = re.sub(r'SnapAll v[0-9\.]+', f'SnapAll v{version}', r_content)
+        r_content = re.sub(r'https://www\.icloud\.com/shortcuts/[a-zA-Z0-9]+', UPDATE_URL, r_content)
+        with open(readme_path, "w", encoding="utf-8") as f:
+            f.write(r_content)
+        print(f"🔄 Đã đồng bộ README.md -> v{version}")
 
 
 if __name__ == "__main__":

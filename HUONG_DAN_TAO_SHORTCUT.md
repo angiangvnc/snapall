@@ -1,13 +1,13 @@
-# 📖 Hướng Dẫn Cài Đặt & Sử Dụng Phím Tắt SnapAll Pro v12.3
+# 📖 Hướng Dẫn Cài Đặt & Sử Dụng Phím Tắt SnapAll Pro v12.4
 
-Phím tắt **SnapAll Pro v12.3** giúp bạn tải video **TikTok (không logo)**, **album ảnh TikTok**, **video Facebook HD/Reels** và **nhạc MP3** trực tiếp từ nút **Chia sẻ (Share Sheet)** trên iPhone/iPad chỉ với 1 chạm.
+Phím tắt **SnapAll Pro v12.4** giúp bạn tải video **TikTok (không logo)**, **album ảnh TikTok**, **video Facebook HD/Reels** và **nhạc MP3** trực tiếp từ nút **Chia sẻ (Share Sheet)** trên iPhone/iPad chỉ với 1 chạm.
 
 ---
 
 ## 🚀 1. Cách Cài Đặt Phím Tắt Trên iPhone / iPad
 
 1. Mở liên kết cài đặt chính thức trên Safari:
-   👉 **[Cài Đặt Phím Tắt SnapAll v12.3 (iCloud)](https://www.icloud.com/shortcuts/7e1ebed6e4c14e9fb13680581ab7a933)**
+   👉 **[Cài Đặt Phím Tắt SnapAll v12.4 (iCloud)](https://www.icloud.com/shortcuts/7e1ebed6e4c14e9fb13680581ab7a933)**
    *(Hoặc tải trực tiếp file [`SnapAll.shortcut`](./SnapAll.shortcut) trên trang chủ).*
 2. Nhấn **Thêm phím tắt (Add Shortcut)**. Nếu máy đã có phiên bản cũ, chọn **Thay thế (Replace)**.
 

@@ -131,7 +131,7 @@ if (!headers_sent()) {
 // -------------------------------------------------------------
 // Versioning & Auto-Update Configuration
 // -------------------------------------------------------------
-$CURRENT_VERSION = '12.3';
+$CURRENT_VERSION = '12.4';
 $UPDATE_URL = 'https://www.icloud.com/shortcuts/7e1ebed6e4c14e9fb13680581ab7a933';
 
 function sendJsonResponse(array $payload) {
@@ -435,6 +435,8 @@ if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
             sendJsonResponse([
                 'status' => 'success',
                 'platform' => 'facebook',
+                'type' => 'video',
+                'is_slideshow' => false,
                 'title' => $titleClean,
                 'thumbnail' => $thumb,
                 'video' => $finalVideo,
@@ -472,6 +474,8 @@ if (preg_match('/\.(mp4|mov|mp3|m4a|jpg|jpeg|png|webp)(\?.*)?$/i', $inputUrl, $e
     sendJsonResponse([
         'status' => 'success',
         'platform' => 'direct',
+        'type' => $isImage ? 'slideshow' : 'video',
+        'is_slideshow' => $isImage,
         'title' => $titleDirect,
         'menu_title' => 'Choose media:',
         'labels' => [$lbl],
@@ -498,6 +502,8 @@ if (!empty($html) && preg_match('/<meta\s+property="og:video(?::secure_url)?"\s+
     sendJsonResponse([
         'status' => 'success',
         'platform' => 'generic',
+        'type' => 'video',
+        'is_slideshow' => false,
         'title' => $titleClean,
         'thumbnail' => '',
         'video' => $videoUrl,
