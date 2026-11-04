@@ -17,7 +17,7 @@ import re
 
 API_URL = "https://snapall.giaiphap.pro/api/parse"
 VERSION = "12.4"
-UPDATE_URL = "https://www.icloud.com/shortcuts/7e1ebed6e4c14e9fb13680581ab7a933"
+UPDATE_URL = "https://www.icloud.com/shortcuts/e9b36959b1854f67ae2d53ee67a56438"
 
 
 def uid():
