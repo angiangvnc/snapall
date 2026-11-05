@@ -96,14 +96,22 @@ function buildProxyDownloadUrl($rawUrl, $filename, $convertMp3 = false) {
 }
 
 $action = $_GET['action'] ?? '';
-if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']))) {
+if (empty($action) && !empty($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUERY_STRING'], 'action=download') !== false) {
+    $action = 'download';
+}
+if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']) || !empty($_SERVER['QUERY_STRING']))) {
     $fileUrl = '';
-    if (!empty($_GET['b64'])) {
-        $b64 = strtr($_GET['b64'], '-_', '+/');
+    $b64Param = $_GET['b64'] ?? '';
+    if (empty($b64Param) && !empty($_SERVER['QUERY_STRING']) && preg_match('/(?:^|[?&]|&amp;)b64=([^&]+)/', $_SERVER['QUERY_STRING'], $bm)) {
+        $b64Param = rawurldecode($bm[1]);
+    }
+    if (!empty($b64Param)) {
+        $b64 = strtr(trim($b64Param), '-_ ', '+/+');
+        $b64 = preg_replace('/[^A-Za-z0-9+\/=]/', '', $b64);
         $pad = strlen($b64) % 4;
         if ($pad > 0) $b64 .= str_repeat('=', 4 - $pad);
-        $decoded = base64_decode($b64, true);
-        if ($decoded !== false) {
+        $decoded = base64_decode($b64);
+        if ($decoded !== false && preg_match('/^https?:\/\//i', trim($decoded))) {
             $fileUrl = trim($decoded);
         }
     }
@@ -121,7 +129,11 @@ if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']))) {
         exit;
     }
 
-    $filename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $_GET['filename'] ?? 'file');
+    $rawFilename = $_GET['filename'] ?? '';
+    if (empty($rawFilename) && !empty($_SERVER['QUERY_STRING']) && preg_match('/(?:^|[?&]|&amp;)filename=([^&]+)/', $_SERVER['QUERY_STRING'], $fm)) {
+        $rawFilename = rawurldecode($fm[1]);
+    }
+    $filename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $rawFilename ?: 'file');
     $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
     $contentType = 'application/octet-stream';
     if ($ext === 'mp4') $contentType = 'video/mp4';
@@ -228,9 +240,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_update') {
 // -------------------------------------------------------------
 $inputUrl = '';
 
-// A. Hỗ trợ tham số b64 (từ Snap Video gốc)
+// A. Hỗ trợ tham số b64 (hỗ trợ cả chuẩn Base64 thường, URL-safe Base64 và dấu '+' bị đổi thành khoảng trắng trên URL)
 if (!empty($_GET['b64'])) {
-    $decoded = base64_decode($_GET['b64'], true);
+    $b64Clean = strtr(trim($_GET['b64']), '-_ ', '+/+');
+    $b64Clean = preg_replace('/[^A-Za-z0-9+\/=]/', '', $b64Clean);
+    $pad = strlen($b64Clean) % 4;
+    if ($pad > 0) $b64Clean .= str_repeat('=', 4 - $pad);
+    $decoded = base64_decode($b64Clean);
     if ($decoded !== false) {
         $inputUrl = trim($decoded);
     }
