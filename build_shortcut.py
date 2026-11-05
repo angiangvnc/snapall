@@ -16,7 +16,7 @@ import time
 import re
 
 API_URL = "https://snapall.giaiphap.pro/api/parse"
-VERSION = "12.4"
+VERSION = "12.5"
 UPDATE_URL = "https://www.icloud.com/shortcuts/e9b36959b1854f67ae2d53ee67a56438"
 
 
@@ -645,13 +645,13 @@ def build_workflow(shortcut_name="SnapAll"):
             "WFInput": {"Type": "Variable", "Variable": var_ref("label_now", [agg_str()])}
         }
     })
-    # [35] Đổi tên tệp bắt buộc có phần mở rộng .mp3: {title}.mp3
+    # [35] Đổi tên tệp bắt buộc có phần mở rộng .mp3: {title}.mp3 (WFDontIncludeFileExtension = True để không bị lặp .mp3.mp3 hoặc giữ đuôi .mp4/.m4a)
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.setitemname",
         "WFWorkflowActionParameters": {
             "UUID": u_audio_named,
             "CustomOutputName": "audio_mp3",
-            "WFDontIncludeFileExtension": False,
+            "WFDontIncludeFileExtension": True,
             "WFName": tok("\ufffc.mp3", {
                 "{0, 1}": {
                     "VariableName": "api_json",
@@ -662,14 +662,14 @@ def build_workflow(shortcut_name="SnapAll"):
             "WFInput": act_out(u_media_file, "media_file")
         }
     })
-    # [36] Lưu file âm thanh (.mp3) vào Files
+    # [36] Lưu file âm thanh (.mp3) vào Tệp (Files) - Hiển thị trình chọn thư mục lưu chuẩn iOS (hỗ trợ cả On My iPhone và iCloud Drive)
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.documentpicker.save",
         "WFWorkflowActionParameters": {
             "UUID": u_saved_file,
             "CustomOutputName": "Saved File",
-            "WFFileStorageService": "iCloud Drive",
-            "SelectionMode": "Save",
+            "WFAskWhereToSave": True,
+            "WFFileDestinationOverwrite": True,
             "WFInput": act_out(u_audio_named, "audio_mp3")
         }
     })
@@ -728,28 +728,21 @@ def build_workflow(shortcut_name="SnapAll"):
 
     # [41] Menu hoàn tất kiểu Snap Video: "🥳 Download successful!!"
     #      🖼️ Open Photos: Mở ứng dụng Photos trên iPhone (khi tải video / ảnh)
-    #      📁 Open Files: Mở file MP3 ở đúng nơi vừa lưu trong ứng dụng Tệp (Files)
+    #      🎵 Open MP3: Phát ngay bài nhạc MP3 vừa tải (Quick Look)
+    #      📁 Open Files: Mở ứng dụng Tệp (Files) tới nơi vừa lưu
     def done_menu(*items):
         add_menu(tok(DONE_TITLE), list(items) + [(CLOSE, [exit_act()])])
 
     photos = (OPEN_PHOTOS, [open_url("photos-redirect://")])
-    files  = (OPEN_FILES, [
-        {
-            "WFWorkflowActionIdentifier": "is.workflow.actions.openin",
-            "WFWorkflowActionParameters": {
-                "WFOpenInAppIdentifier": "com.apple.DocumentsApp",
-                "WFOpenInAskWhenRun": False,
-                "WFInput": var_ref("saved_files")
-            }
-        }
-    ])
+    mp3_preview = (OPEN_MP3, [preview("saved_files")])
+    files  = (OPEN_FILES, [open_url("shareddocuments://")])
 
     if_selected_contains("🎵",
         lambda: if_selected_contains("🎬",
-            lambda: done_menu(photos, files),
+            lambda: done_menu(photos, mp3_preview, files),
             lambda: if_selected_contains("🖼",
-                lambda: done_menu(photos, files),
-                lambda: done_menu(files))),
+                lambda: done_menu(photos, mp3_preview, files),
+                lambda: done_menu(mp3_preview, files))),
         lambda: done_menu(photos))
 
     # ──────────────────────────────────────────────────────────────────────────

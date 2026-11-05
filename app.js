@@ -52,11 +52,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return clean.substring(0, 50) || fallback;
     }
 
-    // Helper: Tải xuống file bằng Blob (CORS) hoặc proxy fallback
-    async function downloadMediaFile(url, filename) {
-        if (!url) return;
+    // Helper: Tải xuống file qua proxy cùng domain (hoặc Blob CORS fallback)
+    async function downloadMediaFile(url, filename, proxyOverride = '') {
+        if (!url && !proxyOverride) return;
+        const isHttp = window.location.protocol.startsWith('http');
+        const isAudio = filename.toLowerCase().endsWith('.mp3');
+
+        // Ưu tiên tải qua proxy PHP cùng domain (đặc biệt với MP3 để backend tự động convert từ M4A/MP4 sang MP3 chuẩn)
+        if (isHttp) {
+            const targetProxyUrl = proxyOverride || (
+                url.includes('api.php?action=download')
+                    ? url
+                    : `api.php?action=download&filename=${encodeURIComponent(filename)}&url=${encodeURIComponent(url)}${isAudio ? '&convert=mp3' : ''}`
+            );
+            const a = document.createElement('a');
+            a.href = targetProxyUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            return;
+        }
+
         try {
-            // Thử fetch trực tiếp qua CORS blob
+            // Thử fetch trực tiếp qua CORS blob nếu chạy static
             const res = await fetch(url, { mode: 'cors' });
             if (res.ok) {
                 const blob = await res.blob();
@@ -71,23 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
         } catch (fetchErr) {
-            console.log('Direct fetch not possible, falling back to proxy/direct link:', fetchErr);
+            console.log('Direct fetch not possible, falling back to direct link:', fetchErr);
         }
 
-        // Fallback qua proxy PHP nếu khả dụng
-        const isHttp = window.location.protocol.startsWith('http');
-        if (isHttp) {
-            const proxyUrl = `api.php?action=download&filename=${encodeURIComponent(filename)}&url=${encodeURIComponent(url)}`;
-            const a = document.createElement('a');
-            a.href = proxyUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        } else {
-            // Static link
-            window.open(url, '_blank');
-        }
+        window.open(url, '_blank');
     }
 
     // Nút Dán (Paste)
@@ -244,10 +250,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Nút Audio
-        if (data.audio) {
+        if (data.audio || (data.download_proxy && data.download_proxy.audio)) {
+            const audioProxy = (data.download_proxy && data.download_proxy.audio) || '';
             btnDownloadAudio.onclick = (e) => {
                 e.preventDefault();
-                downloadMediaFile(data.audio, `${safeBaseName}_audio.mp3`);
+                downloadMediaFile(data.audio, `${safeBaseName}_audio.mp3`, audioProxy);
             };
             btnDownloadAudio.style.display = 'inline-flex';
         } else {
@@ -318,10 +325,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. Tạo thẻ Âm Thanh MP3
         if (hasAudio) {
             const audioFilename = `${safeBaseName}_audio.mp3`;
+            const audioProxy = (data.download_proxy && data.download_proxy.audio) || '';
             const audioCard = document.createElement('div');
             audioCard.className = 'media-file-item selected audio-file-item';
             audioCard.dataset.type = 'audio';
-            audioCard.dataset.url = data.audio;
+            audioCard.dataset.url = audioProxy || data.audio;
             audioCard.dataset.filename = audioFilename;
 
             audioCard.innerHTML = `
@@ -338,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span>Âm thanh gốc chất lượng cao</span>
                     </div>
                     <div class="audio-player-wrap">
-                        <audio controls class="mini-audio-player" src="${data.audio}" preload="none"></audio>
+                        <audio controls class="mini-audio-player" src="${audioProxy || data.audio}" preload="none"></audio>
                     </div>
                 </div>
                 <div class="item-actions-col">
@@ -352,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const audioDlBtn = audioCard.querySelector('.btn-single-dl');
             audioDlBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                downloadMediaFile(data.audio, audioFilename);
+                downloadMediaFile(data.audio, audioFilename, audioProxy);
             });
 
             mediaItemsContainer.appendChild(audioCard);

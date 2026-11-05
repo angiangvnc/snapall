@@ -59,10 +59,40 @@ function getBaseApiUrl() {
     return $scheme . '://' . $host . '/api.php';
 }
 
-function buildProxyDownloadUrl($rawUrl, $filename) {
+function toAsciiFilename($filename) {
+    $map = [
+        'à'=>'a','á'=>'a','ạ'=>'a','ả'=>'a','ã'=>'a','â'=>'a','ầ'=>'a','ấ'=>'a','ậ'=>'a','ẩ'=>'a','ẫ'=>'a','ă'=>'a','ằ'=>'a','ắ'=>'a','ặ'=>'a','ẳ'=>'a','ẵ'=>'a',
+        'è'=>'e','é'=>'e','ẹ'=>'e','ẻ'=>'e','ẽ'=>'e','ê'=>'e','ề'=>'e','ế'=>'e','ệ'=>'e','ể'=>'e','ễ'=>'e',
+        'ì'=>'i','í'=>'i','ị'=>'i','ỉ'=>'i','ĩ'=>'i',
+        'ò'=>'o','ó'=>'o','ọ'=>'o','ỏ'=>'o','õ'=>'o','ô'=>'o','ồ'=>'o','ố'=>'o','ộ'=>'o','ổ'=>'o','ỗ'=>'o','ơ'=>'o','ờ'=>'o','ớ'=>'o','ợ'=>'o','ở'=>'o','ỡ'=>'o',
+        'ù'=>'u','ú'=>'u','ụ'=>'u','ủ'=>'u','ũ'=>'u','ư'=>'u','ừ'=>'u','ứ'=>'u','ự'=>'u','ử'=>'u','ữ'=>'u',
+        'ỳ'=>'y','ý'=>'y','ỵ'=>'y','ỷ'=>'y','ỹ'=>'y','đ'=>'d',
+        'À'=>'A','Á'=>'A','Ạ'=>'A','Ả'=>'A','Ã'=>'A','Â'=>'A','Ầ'=>'A','Ấ'=>'A','Ậ'=>'A','Ẩ'=>'A','Ẫ'=>'A','Ă'=>'A','Ằ'=>'A','Ắ'=>'A','Ặ'=>'A','Ẳ'=>'A','Ẵ'=>'A',
+        'È'=>'E','É'=>'E','Ẹ'=>'E','Ẻ'=>'E','Ẽ'=>'E','Ê'=>'E','Ề'=>'E','Ế'=>'E','Ệ'=>'E','Ể'=>'E','Ễ'=>'E',
+        'Ì'=>'I','Í'=>'I','Ị'=>'I','Ỉ'=>'I','Ĩ'=>'I',
+        'Ò'=>'O','Ó'=>'O','Ọ'=>'O','Ỏ'=>'O','Õ'=>'O','Ô'=>'O','Ồ'=>'O','Ố'=>'O','Ộ'=>'O','Ổ'=>'O','Ỗ'=>'O','Ơ'=>'O','Ờ'=>'O','Ớ'=>'O','Ợ'=>'O','Ở'=>'O','Ỡ'=>'O',
+        'Ù'=>'U','Ú'=>'U','Ụ'=>'U','Ủ'=>'U','Ũ'=>'U','Ư'=>'U','Ừ'=>'U','Ứ'=>'U','Ự'=>'U','Ử'=>'U','Ữ'=>'U',
+        'Ỳ'=>'Y','Ý'=>'Y','Ỵ'=>'Y','Ỷ'=>'Y','Ỹ'=>'Y','Đ'=>'D'
+    ];
+    $s = strtr($filename, $map);
+    $ext = strtolower(pathinfo($s, PATHINFO_EXTENSION));
+    $base = pathinfo($s, PATHINFO_FILENAME);
+    $base = preg_replace('/[^a-zA-Z0-9_\-]+/', '_', $base);
+    $base = trim($base, '_-');
+    if ($base === '') $base = 'snapall_media';
+    $base = substr($base, 0, 50);
+    return $ext !== '' ? ($base . '.' . $ext) : $base;
+}
+
+function buildProxyDownloadUrl($rawUrl, $filename, $convertMp3 = false) {
     if (empty($rawUrl)) return '';
+    $safeName = toAsciiFilename($filename);
     $b64 = rtrim(strtr(base64_encode($rawUrl), '+/', '-_'), '=');
-    return getBaseApiUrl() . '?action=download&filename=' . rawurlencode($filename) . '&b64=' . rawurlencode($b64);
+    $url = getBaseApiUrl() . '?action=download&filename=' . rawurlencode($safeName) . '&b64=' . rawurlencode($b64);
+    if ($convertMp3) {
+        $url .= '&convert=mp3';
+    }
+    return $url;
 }
 
 $action = $_GET['action'] ?? '';
@@ -96,6 +126,7 @@ if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']))) {
     $contentType = 'application/octet-stream';
     if ($ext === 'mp4') $contentType = 'video/mp4';
     elseif ($ext === 'mp3') $contentType = 'audio/mpeg';
+    elseif ($ext === 'm4a') $contentType = 'audio/mp4';
     elseif (in_array($ext, ['jpg', 'jpeg'])) $contentType = 'image/jpeg';
     elseif ($ext === 'png') $contentType = 'image/png';
     elseif ($ext === 'webp') $contentType = 'image/webp';
@@ -107,12 +138,42 @@ if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']))) {
     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
     header('Pragma: public');
 
+    // Nếu yêu cầu tải file .mp3 và máy chủ có sẵn ffmpeg, tự động chuyển đổi định dạng chuẩn MP3 128kbps
+    // (Xử lý triệt để trường hợp video Facebook MP4 hoặc âm thanh TikTok M4A/MP4 bị lỗi không phát được khi đổi tên .mp3)
+    $needConvertMp3 = ($ext === 'mp3') && (
+        !empty($_GET['convert']) ||
+        preg_match('/(mime_type=audio_mp4|mime_type=video_mp4|tos-alisg-ve-2774|\.mp4|\.m4a|fbcdn\.net)/i', $fileUrl)
+    );
+    if ($needConvertMp3 && function_exists('passthru')) {
+        $ffmpegBin = '';
+        foreach (['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg'] as $candidate) {
+            if (@is_executable($candidate)) {
+                $ffmpegBin = $candidate;
+                break;
+            }
+        }
+        if ($ffmpegBin !== '') {
+            $ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+            $cmd = escapeshellcmd($ffmpegBin)
+                . ' -loglevel error -user_agent ' . escapeshellarg($ua)
+                . ' -i ' . escapeshellarg($fileUrl)
+                . ' -vn -acodec libmp3lame -ab 128k -ar 44100 -f mp3 pipe:1';
+            @passthru($cmd, $retCode);
+            if ($retCode === 0) {
+                exit;
+            }
+        }
+    }
+
     $ch = curl_init($fileUrl);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 90);
     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1');
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Referer: https://www.tiktok.com/'
+    ]);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
     if (defined('CURLOPT_PROTOCOLS')) {
@@ -120,7 +181,9 @@ if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']))) {
         curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
     }
     curl_exec($ch);
-    curl_close($ch);
+    if (PHP_VERSION_ID < 80500) {
+        @curl_close($ch);
+    }
     exit;
 }
 
@@ -131,7 +194,7 @@ if (!headers_sent()) {
 // -------------------------------------------------------------
 // Versioning & Auto-Update Configuration
 // -------------------------------------------------------------
-$CURRENT_VERSION = '12.4';
+$CURRENT_VERSION = '12.5';
 $UPDATE_URL = 'https://www.icloud.com/shortcuts/e9b36959b1854f67ae2d53ee67a56438';
 
 function sendJsonResponse(array $payload) {
@@ -273,6 +336,9 @@ if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
             if (empty($audioUrl) && !empty($item['music_info']['play'])) {
                 $audioUrl = $item['music_info']['play'];
             }
+            if (empty($audioUrl)) {
+                $audioUrl = $item['play'] ?? $item['hdplay'] ?? '';
+            }
 
             // Nếu là album ảnh slideshow, tikwm trả play/hdplay là file audio chứ không phải video
             if ($isSlideshow) {
@@ -289,10 +355,10 @@ if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
             $medias = [];
             // Đồng nhất 100% link tải trong medias qua cùng domain proxy (snapall.giaiphap.pro)
             // để iOS Shortcuts chỉ hỏi quyền Lưu vào Album Ảnh đúng 1 lần duy nhất ("Always Allow")!
-            $add = function ($lbl, $link, $fname) use (&$labels, &$medias) {
+            $add = function ($lbl, $link, $fname, $convertMp3 = false) use (&$labels, &$medias) {
                 if (!empty($link)) {
                     $labels[] = $lbl;
-                    $medias[$lbl] = buildProxyDownloadUrl($link, $fname);
+                    $medias[$lbl] = buildProxyDownloadUrl($link, $fname, $convertMp3);
                 }
             };
 
@@ -312,12 +378,12 @@ if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
 
             // Âm thanh MP3
             if (!empty($audioUrl)) {
-                $add('🎵 MP3 128KBPS', $audioUrl, $titleText . '_audio.mp3');
+                $add('🎵 MP3 128KBPS', $audioUrl, $titleText . '_audio.mp3', true);
             }
 
             $downloadProxy = [];
             if (!empty($audioUrl)) {
-                $downloadProxy['audio'] = buildProxyDownloadUrl($audioUrl, $titleText . '_audio.mp3');
+                $downloadProxy['audio'] = buildProxyDownloadUrl($audioUrl, $titleText . '_audio.mp3', true);
             }
             if (!$isSlideshow && (!empty($videoHd) || !empty($videoSd))) {
                 $downloadProxy['video'] = buildProxyDownloadUrl($videoHd ?: $videoSd, $titleText . '_video.mp4');
@@ -430,7 +496,7 @@ if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
                 $medias['🎬 MP4 SD'] = buildProxyDownloadUrl($sd, $titleClean . '_SD.mp4');
             }
             $labels[] = '🎵 MP3 AUDIO';
-            $medias['🎵 MP3 AUDIO'] = buildProxyDownloadUrl($finalVideo, $titleClean . '_audio.mp3');
+            $medias['🎵 MP3 AUDIO'] = buildProxyDownloadUrl($finalVideo, $titleClean . '_audio.mp3', true);
 
             sendJsonResponse([
                 'status' => 'success',
@@ -448,7 +514,7 @@ if (preg_match('/(facebook\.com|fb\.watch|fb\.me)/i', $inputUrl)) {
                 'medias' => $medias,
                 'download_proxy' => [
                     'video' => buildProxyDownloadUrl($finalVideo, $titleClean . '_video.mp4'),
-                    'audio' => buildProxyDownloadUrl($finalVideo, $titleClean . '_audio.mp3')
+                    'audio' => buildProxyDownloadUrl($finalVideo, $titleClean . '_audio.mp3', true)
                 ]
             ]);
         }
@@ -512,7 +578,7 @@ if (!empty($html) && preg_match('/<meta\s+property="og:video(?::secure_url)?"\s+
         'labels' => ['🎬 MP4 VIDEO', '🎵 MP3 AUDIO'],
         'medias' => [
             '🎬 MP4 VIDEO' => buildProxyDownloadUrl($videoUrl, $titleClean . '.mp4'),
-            '🎵 MP3 AUDIO' => buildProxyDownloadUrl($videoUrl, $titleClean . '.mp3')
+            '🎵 MP3 AUDIO' => buildProxyDownloadUrl($videoUrl, $titleClean . '.mp3', true)
         ]
     ]);
 }

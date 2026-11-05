@@ -9,7 +9,7 @@
 
 ## 📱 Cài Đặt Phím Tắt (Shortcuts) Trên iPhone
 
-* **Cài đặt 1 chạm qua iCloud:** [Cài Đặt Phím Tắt SnapAll v12.4](https://www.icloud.com/shortcuts/e9b36959b1854f67ae2d53ee67a56438)
+* **Cài đặt 1 chạm qua iCloud:** [Cài Đặt Phím Tắt SnapAll v12.5](https://www.icloud.com/shortcuts/e9b36959b1854f67ae2d53ee67a56438)
 * **Tải file trực tiếp:** [`SnapAll.shortcut`](./SnapAll.shortcut)
 
 ### Cách sử dụng trên iPhone:
