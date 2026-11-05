@@ -7,7 +7,7 @@ Phím tắt **SnapAll Pro v12.5** giúp bạn tải video **TikTok (không logo)
 ## 🚀 1. Cách Cài Đặt Phím Tắt Trên iPhone / iPad
 
 1. Mở liên kết cài đặt chính thức trên Safari:
-   👉 **[Cài Đặt Phím Tắt SnapAll v12.5 (iCloud)](https://www.icloud.com/shortcuts/e9b36959b1854f67ae2d53ee67a56438)**
+   👉 **[Cài Đặt Phím Tắt SnapAll v12.5 (iCloud)](https://www.icloud.com/shortcuts/507b7dcf64004b47865103b8f63541b5)**
    *(Hoặc tải trực tiếp file [`SnapAll.shortcut`](./SnapAll.shortcut) trên trang chủ).*
 2. Nhấn **Thêm phím tắt (Add Shortcut)**. Nếu máy đã có phiên bản cũ, chọn **Thay thế (Replace)**.
 

@@ -195,7 +195,7 @@ if (!headers_sent()) {
 // Versioning & Auto-Update Configuration
 // -------------------------------------------------------------
 $CURRENT_VERSION = '12.5';
-$UPDATE_URL = 'https://www.icloud.com/shortcuts/e9b36959b1854f67ae2d53ee67a56438';
+$UPDATE_URL = 'https://www.icloud.com/shortcuts/507b7dcf64004b47865103b8f63541b5';
 
 function sendJsonResponse(array $payload) {
     global $CURRENT_VERSION, $UPDATE_URL;
