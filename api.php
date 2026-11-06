@@ -116,9 +116,38 @@ function cleanTitle($str) {
 function buildProxyDownloadUrl($rawUrl, $filename, $convertMp3 = false) {
     if (empty($rawUrl)) return '';
     $safeName = toAsciiFilename($filename);
-    // Dùng chuẩn Base64 chuẩn hóa hex hoặc thay '_' bằng '.' và '-' bằng '~' để iOS Shortcuts không nhầm '_YT0w' là Markdown Italic!
+
+    // 1. Lưu cache tạm trên server theo ID ngắn (12 ký tự hex) để phản hồi tức thì
+    $dlId = substr(md5($rawUrl), 0, 12);
+    $cacheDir = sys_get_temp_dir();
+    if (!empty($cacheDir) && @is_writable($cacheDir)) {
+        @file_put_contents($cacheDir . '/snapall_dl_' . $dlId . '.txt', $rawUrl);
+        if (mt_rand(1, 50) === 1) {
+            $now = time();
+            foreach ((array) @glob($cacheDir . '/snapall_dl_*.txt') as $f) {
+                if (@is_file($f) && ($now - (int) @filemtime($f)) > 21600) {
+                    @unlink($f);
+                }
+            }
+        }
+    }
+
+    // 2. Chia nhỏ chuỗi Base64 thành các đoạn <= 180 ký tự (b0, b1, b2...)
+    // QUAN TRỌNG: Bộ nhận diện URL của iOS Shortcuts (Apple NSDataDetector / WFURLContentItem)
+    // sẽ tự động cắt cụt mọi giá trị query param dài quá 511 ký tự (làm mất sạch dữ liệu sau '&b64').
+    // Việc chia nhỏ mỗi param <= 180 ký tự giúp NSDataDetector giữ nguyên 100% URL trên mọi phiên bản iOS!
     $b64 = rtrim(strtr(base64_encode($rawUrl), '+/', '-~'), '=');
-    $url = getBaseApiUrl() . '?action=download&filename=' . rawurlencode($safeName) . '&b64=' . rawurlencode($b64);
+    $chunks = str_split($b64, 180);
+    $bParams = [];
+    foreach ($chunks as $idx => $chunk) {
+        $bParams[] = 'b' . $idx . '=' . rawurlencode($chunk);
+    }
+
+    $url = getBaseApiUrl()
+        . '?action=download'
+        . '&id=' . $dlId
+        . '&filename=' . rawurlencode($safeName)
+        . '&' . implode('&', $bParams);
     if ($convertMp3) {
         $url .= '&convert=mp3';
     }
@@ -129,13 +158,35 @@ $action = $_GET['action'] ?? '';
 if (empty($action) && !empty($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUERY_STRING'], 'action=download') !== false) {
     $action = 'download';
 }
-if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']) || !empty($_SERVER['QUERY_STRING']))) {
+if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']) || !empty($_GET['id']) || !empty($_GET['b0']) || !empty($_SERVER['QUERY_STRING']))) {
     $fileUrl = '';
+
+    // A. Khôi phục nhanh từ cache ID trên máy chủ (nếu có)
+    $dlId = preg_replace('/[^a-f0-9]/i', '', $_GET['id'] ?? '');
+    if (!empty($dlId)) {
+        $cacheFile = sys_get_temp_dir() . '/snapall_dl_' . $dlId . '.txt';
+        if (@is_file($cacheFile)) {
+            $cachedUrl = trim((string) @file_get_contents($cacheFile));
+            if (preg_match('/^https?:\/\//i', $cachedUrl)) {
+                $fileUrl = $cachedUrl;
+            }
+        }
+    }
+
+    // B. Ghép các đoạn Base64 đã chia nhỏ (b0, b1, b2...) hoặc lấy từ b64 truyền thống
     $b64Param = $_GET['b64'] ?? '';
+    if (empty($b64Param) && isset($_GET['b0'])) {
+        $joined = '';
+        for ($i = 0; $i < 20; $i++) {
+            if (!isset($_GET['b' . $i])) break;
+            $joined .= (string) $_GET['b' . $i];
+        }
+        $b64Param = $joined;
+    }
     if (empty($b64Param) && !empty($_SERVER['QUERY_STRING']) && preg_match('/(?:^|[?&]|&amp;)b64=([^&]+)/', $_SERVER['QUERY_STRING'], $bm)) {
         $b64Param = rawurldecode($bm[1]);
     }
-    if (!empty($b64Param)) {
+    if (empty($fileUrl) && !empty($b64Param)) {
         $tryDecode = function ($rawB64) {
             $b = strtr(trim($rawB64), '-~_ ', '+//+');
             $b = preg_replace('/[^A-Za-z0-9+\/]/', '', $b);
