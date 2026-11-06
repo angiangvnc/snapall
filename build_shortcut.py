@@ -585,12 +585,12 @@ def build_workflow(shortcut_name="SnapAll"):
         }
     })
 
-    # [31] Set label_now = Repeat Item
+    # [31] Set label_now = Repeat Item (coerce to String để đảm bảo lấy đúng key trong Dictionary medias)
     A.append({
         "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
         "WFWorkflowActionParameters": {
             "WFVariableName": "label_now",
-            "WFInput": {"Value": {"VariableName": "Repeat Item", "Type": "Variable"}, "WFSerializationType": "WFTextTokenAttachment"}
+            "WFInput": {"Value": {"VariableName": "Repeat Item", "Type": "Variable", "Aggrandizements": [agg_str()]}, "WFSerializationType": "WFTextTokenAttachment"}
         }
     })
 
@@ -600,8 +600,8 @@ def build_workflow(shortcut_name="SnapAll"):
         "WFWorkflowActionParameters": {
             "UUID": u_media_url_act,
             "CustomOutputName": "media_url",
-            "WFDictionaryKey": tok("\ufffc", {"{0, 1}": {"VariableName": "label_now", "Type": "Variable"}}),
-            "WFInput": var_ref("medias")
+            "WFDictionaryKey": tok("\ufffc", {"{0, 1}": {"VariableName": "label_now", "Type": "Variable", "Aggrandizements": [agg_str()]}}),
+            "WFInput": var_ref("medias", [agg_dict()])
         }
     })
 
@@ -618,7 +618,7 @@ def build_workflow(shortcut_name="SnapAll"):
                     "OutputUUID": u_media_url_act,
                     "OutputName": "media_url",
                     "Type": "ActionOutput",
-                    "Aggrandizements": [agg_url()]
+                    "Aggrandizements": [agg_str()]
                 }
             }),
             "WFHTTPHeaders": {

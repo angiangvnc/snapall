@@ -39,7 +39,23 @@ function isSafeRemoteUrl($url) {
         return (bool) filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
     }
 
+    // Cho phép nhanh các tên miền CDN công khai của TikTok / Douyin / Facebook để tránh lỗi timeout DNS trên VPS
+    if (preg_match('/(?:^|\.)(tiktok\.com|tiktokv\.com|tiktokv\.us|tiktokcdn\.com|tiktokcdn-us\.com|tiktokcdn-eu\.com|byteoversea\.com|ibytedtos\.com|muscdn\.com|musical\.ly|douyin\.com|douyinvod\.com|douyinpic\.com|facebook\.com|fb\.watch|fb\.me|fbcdn\.net)$/i', $host)) {
+        return true;
+    }
+
     $ips = @gethostbynamel($host);
+    if (empty($ips) || !is_array($ips)) {
+        // Fallback sang dns_get_record (hỗ trợ cả A và AAAA) nếu gethostbynamel bị lỗi tạm thời
+        $records = @dns_get_record($host, DNS_A + DNS_AAAA);
+        if (!empty($records) && is_array($records)) {
+            $ips = [];
+            foreach ($records as $rec) {
+                if (!empty($rec['ip'])) $ips[] = $rec['ip'];
+                elseif (!empty($rec['ipv6'])) $ips[] = $rec['ipv6'];
+            }
+        }
+    }
     if (empty($ips) || !is_array($ips)) return false;
     foreach ($ips as $ip) {
         if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
@@ -80,14 +96,28 @@ function toAsciiFilename($filename) {
     $base = preg_replace('/[^a-zA-Z0-9_\-]+/', '_', $base);
     $base = trim($base, '_-');
     if ($base === '') $base = 'snapall_media';
-    $base = substr($base, 0, 50);
     return $ext !== '' ? ($base . '.' . $ext) : $base;
+}
+
+// Hàm dọn dẹp tiêu đề file sạch (dùng chung cho cả đầu trang và bên dưới)
+function cleanTitle($str) {
+    if (!$str) return 'video';
+    $clean = preg_replace('/[\r\n\t]+/', ' ', $str);
+    $clean = preg_replace('/[\\\\\\/:\\*\\?"<>\\|#%&{}<>\\$\\!\'`@\\+~]+/', '', $clean);
+    $clean = preg_replace('/\\s+/', ' ', $clean);
+    $clean = trim($clean);
+    $clean = $clean ?: 'video';
+    if (function_exists('mb_substr')) {
+        return mb_substr($clean, 0, 42, 'UTF-8');
+    }
+    return preg_match('/^.{0,42}/us', $clean, $cut) ? $cut[0] : substr($clean, 0, 42);
 }
 
 function buildProxyDownloadUrl($rawUrl, $filename, $convertMp3 = false) {
     if (empty($rawUrl)) return '';
     $safeName = toAsciiFilename($filename);
-    $b64 = rtrim(strtr(base64_encode($rawUrl), '+/', '-_'), '=');
+    // Dùng chuẩn Base64 chuẩn hóa hex hoặc thay '_' bằng '.' và '-' bằng '~' để iOS Shortcuts không nhầm '_YT0w' là Markdown Italic!
+    $b64 = rtrim(strtr(base64_encode($rawUrl), '+/', '-~'), '=');
     $url = getBaseApiUrl() . '?action=download&filename=' . rawurlencode($safeName) . '&b64=' . rawurlencode($b64);
     if ($convertMp3) {
         $url .= '&convert=mp3';
@@ -106,13 +136,27 @@ if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']) || !
         $b64Param = rawurldecode($bm[1]);
     }
     if (!empty($b64Param)) {
-        $b64 = strtr(trim($b64Param), '-_ ', '+/+');
-        $b64 = preg_replace('/[^A-Za-z0-9+\/=]/', '', $b64);
-        $pad = strlen($b64) % 4;
-        if ($pad > 0) $b64 .= str_repeat('=', 4 - $pad);
-        $decoded = base64_decode($b64);
-        if ($decoded !== false && preg_match('/^https?:\/\//i', trim($decoded))) {
-            $fileUrl = trim($decoded);
+        $tryDecode = function ($rawB64) {
+            $b = strtr(trim($rawB64), '-~_ ', '+//+');
+            $b = preg_replace('/[^A-Za-z0-9+\/]/', '', $b);
+            $pad = strlen($b) % 4;
+            if ($pad === 1) return '';
+            if ($pad > 0) $b .= str_repeat('=', 4 - $pad);
+            $dec = base64_decode($b, true);
+            return ($dec !== false && preg_match('/^https?:\/\//i', trim($dec))) ? trim($dec) : '';
+        };
+
+        $fileUrl = $tryDecode($b64Param);
+
+        // Khôi phục tự động nếu phím tắt trên iPhone dùng bản cũ làm mất dấu '_' ở vị trí '?_a=0' ('/_YT0' -> '/YT0')
+        if (empty($fileUrl) || !filter_var($fileUrl, FILTER_VALIDATE_URL)) {
+            $repairedB64 = preg_replace('/(Qy8|di8|NS8|dC8|MC8|MS8|Mi8|My8|NC8|Ni8|Ny8|OC8|OS8)(YT0[A-Za-z0-9])/', '$1_$2', $b64Param);
+            if ($repairedB64 !== $b64Param) {
+                $candidate = $tryDecode($repairedB64);
+                if (!empty($candidate) && filter_var($candidate, FILTER_VALIDATE_URL)) {
+                    $fileUrl = $candidate;
+                }
+            }
         }
     }
     if (empty($fileUrl) && !empty($_GET['url'])) {
@@ -273,20 +317,6 @@ if (empty($inputUrl) || !isSafeRemoteUrl($inputUrl)) {
         'status' => 'error',
         'message' => 'Vui lòng cung cấp liên kết hợp lệ (url hoặc b64) video TikTok hoặc Facebook.'
     ]);
-}
-
-// Hàm dọn dẹp tiêu đề file sạch
-function cleanTitle($str) {
-    if (!$str) return 'video';
-    $clean = preg_replace('/[\r\n\t]+/', ' ', $str);
-    $clean = preg_replace('/[\\\\\\/:\\*\\?"<>\\|#%&{}<>\\$\\!\'`@\\+~]+/', '', $clean);
-    $clean = preg_replace('/\\s+/', ' ', $clean);
-    $clean = trim($clean);
-    $clean = $clean ?: 'video';
-    if (function_exists('mb_substr')) {
-        return mb_substr($clean, 0, 60, 'UTF-8');
-    }
-    return preg_match('/^.{0,60}/us', $clean, $cut) ? $cut[0] : substr($clean, 0, 60);
 }
 
 // Hàm gửi request cURL
