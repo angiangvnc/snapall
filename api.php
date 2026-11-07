@@ -9,6 +9,8 @@ if (!headers_sent()) {
     header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
 }
 
 $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -18,9 +20,17 @@ if ($requestMethod === 'OPTIONS') {
 }
 
 // -------------------------------------------------------------
-// 0. Bảo mật chống SSRF / Local File Read & Hỗ trợ Proxy Tải Xuống
+// 0. Bảo mật chống SSRF / Local File Read / Open Proxy & Hỗ trợ Proxy Tải Xuống
 // -------------------------------------------------------------
-function isSafeRemoteUrl($url) {
+function isAllowedMediaOrSocialHost($host) {
+    $host = strtolower(trim($host, '.'));
+    return (bool) preg_match(
+        '/(?:^|\.)(tiktok\.com|tiktokv\.com|tiktokv\.us|tiktokv\.eu|tiktokcdn\.com|tiktokcdn-us\.com|tiktokcdn-eu\.com|tiktokcdn-in\.com|byteoversea\.com|ByteOversea\.net|ibytedtos\.com|ibyteimg\.com|muscdn\.com|musical\.ly|douyin\.com|douyinvod\.com|douyinpic\.com|iesdouyin\.com|tikwm\.com|facebook\.com|fb\.com|fb\.watch|fb\.me|fbcdn\.net|fbsbx\.com|instagram\.com|cdninstagram\.com|akamaized\.net|akamaihd\.net|cloudfront\.net)$/i',
+        $host
+    );
+}
+
+function isSafeRemoteUrl($url, $requireAllowedMediaHost = false) {
     if (!is_string($url) || empty($url)) return false;
     $url = trim($url);
     if (!filter_var($url, FILTER_VALIDATE_URL)) return false;
@@ -31,16 +41,21 @@ function isSafeRemoteUrl($url) {
     $scheme = strtolower($parts['scheme']);
     if (!in_array($scheme, ['http', 'https'], true)) return false;
 
-    $host = strtolower($parts['host']);
-    if (in_array($host, ['localhost', '127.0.0.1', '0.0.0.0', '::1'], true)) return false;
-    if (preg_match('/(\.local|\.internal|\.localhost|\.lan)$/i', $host)) return false;
+    $host = strtolower(trim($parts['host'], '[]'));
+    if (in_array($host, ['localhost', '127.0.0.1', '0.0.0.0', '::1', '169.254.169.254'], true)) return false;
+    if (preg_match('/(\.local|\.internal|\.localhost|\.lan|\.arpa)$/i', $host)) return false;
 
     if (filter_var($host, FILTER_VALIDATE_IP)) {
+        if ($requireAllowedMediaHost) return false;
         return (bool) filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
     }
 
+    if ($requireAllowedMediaHost && !isAllowedMediaOrSocialHost($host)) {
+        return false;
+    }
+
     // Cho phép nhanh các tên miền CDN công khai của TikTok / Douyin / Facebook để tránh lỗi timeout DNS trên VPS
-    if (preg_match('/(?:^|\.)(tiktok\.com|tiktokv\.com|tiktokv\.us|tiktokcdn\.com|tiktokcdn-us\.com|tiktokcdn-eu\.com|byteoversea\.com|ibytedtos\.com|muscdn\.com|musical\.ly|douyin\.com|douyinvod\.com|douyinpic\.com|facebook\.com|fb\.watch|fb\.me|fbcdn\.net)$/i', $host)) {
+    if (isAllowedMediaOrSocialHost($host)) {
         return true;
     }
 
@@ -66,7 +81,13 @@ function isSafeRemoteUrl($url) {
 }
 
 function getBaseApiUrl() {
-    $host = $_SERVER['HTTP_HOST'] ?? 'snapall.giaiphap.pro';
+    $rawHost = $_SERVER['HTTP_HOST'] ?? 'snapall.giaiphap.pro';
+    // Chống Host Header Injection: chỉ chấp nhận tên miền hợp lệ
+    if (!preg_match('/^[a-zA-Z0-9.\-]+(?::\d{1,5})?$/', $rawHost)) {
+        $host = 'snapall.giaiphap.pro';
+    } else {
+        $host = $rawHost;
+    }
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
         || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
         || (!empty($_SERVER['HTTP_CF_VISITOR']) && strpos($_SERVER['HTTP_CF_VISITOR'], 'https') !== false)
@@ -214,7 +235,7 @@ if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']) || !
         $fileUrl = trim($_GET['url']);
     }
 
-    if (!isSafeRemoteUrl($fileUrl)) {
+    if (!isSafeRemoteUrl($fileUrl, true)) {
         http_response_code(403);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
@@ -262,7 +283,7 @@ if ($action === 'download' && (!empty($_GET['url']) || !empty($_GET['b64']) || !
         if ($ffmpegBin !== '') {
             $ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
             $cmd = escapeshellcmd($ffmpegBin)
-                . ' -loglevel error -user_agent ' . escapeshellarg($ua)
+                . ' -loglevel error -protocol_whitelist https,http,tcp,tls,crypto -user_agent ' . escapeshellarg($ua)
                 . ' -i ' . escapeshellarg($fileUrl)
                 . ' -vn -acodec libmp3lame -ab 128k -ar 44100 -f mp3 pipe:1';
             @passthru($cmd, $retCode);
@@ -359,8 +380,8 @@ if (empty($inputUrl) && !empty($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUE
 }
 
 // D. Tách URL sạch từ văn bản nếu người dùng dán cả đoạn caption dài
-if (!empty($inputUrl) && preg_match('/https?:\/\/[^\s]+/i', $inputUrl, $matchUrl)) {
-    $inputUrl = $matchUrl[0];
+if (!empty($inputUrl) && preg_match('/https?:\/\/[^\s"\'<>]+/i', $inputUrl, $matchUrl)) {
+    $inputUrl = rtrim($matchUrl[0], '.,;!?)]}\'"');
 }
 
 if (empty($inputUrl) || !isSafeRemoteUrl($inputUrl)) {
@@ -401,6 +422,10 @@ function fetchCurl($url, $customHeaders = [], $followRedirect = true) {
     $effectiveUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
     if (PHP_VERSION_ID < 80500) {
         @curl_close($ch);
+    }
+
+    if (!empty($effectiveUrl) && $effectiveUrl !== $url && !isSafeRemoteUrl($effectiveUrl)) {
+        return ['code' => 403, 'body' => '', 'url' => $effectiveUrl];
     }
 
     return [

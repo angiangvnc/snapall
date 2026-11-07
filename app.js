@@ -52,6 +52,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return clean.substring(0, 50) || fallback;
     }
 
+    // Helper: chống XSS khi chèn chuỗi động vào thuộc tính HTML
+    function escapeHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
     // Helper: Tải xuống file qua proxy cùng domain (hoặc Blob CORS fallback)
     async function downloadMediaFile(url, filename, proxyOverride = '') {
         if (!url && !proxyOverride) return;
@@ -229,9 +239,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Nút HD
         if (data.video_hd || data.video) {
             const videoUrl = data.video_hd || data.video;
+            const videoProxy = (data.download_proxy && data.download_proxy.video) || '';
             btnDownloadHd.onclick = (e) => {
                 e.preventDefault();
-                downloadMediaFile(videoUrl, `${safeBaseName}_HD.mp4`);
+                downloadMediaFile(videoUrl, `${safeBaseName}_HD.mp4`, videoProxy);
             };
             btnDownloadHd.style.display = 'inline-flex';
         } else {
@@ -240,9 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Nút SD
         if (data.video_sd && data.video_sd !== data.video_hd) {
+            const sdProxy = (data.download_proxy && data.download_proxy.sd_video) || '';
             btnDownloadSd.onclick = (e) => {
                 e.preventDefault();
-                downloadMediaFile(data.video_sd, `${safeBaseName}_SD.mp4`);
+                downloadMediaFile(data.video_sd, `${safeBaseName}_SD.mp4`, sdProxy);
             };
             btnDownloadSd.style.display = 'inline-flex';
         } else {
@@ -283,12 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
             card.dataset.url = imgUrl;
             card.dataset.filename = itemFilename;
 
+            const safeImgUrl = escapeHtml(imgUrl);
             card.innerHTML = `
                 <div class="item-checkbox-col">
                     <input type="checkbox" class="file-checkbox-input" id="chk_img_${index}" checked title="Chọn tệp này">
                 </div>
                 <div class="item-preview-col" title="Nhấn để xem ảnh phóng to">
-                    <img src="${imgUrl}" alt="Ảnh ${itemNum}" class="item-thumb-img" loading="lazy">
+                    <img src="${safeImgUrl}" alt="Ảnh ${itemNum}" class="item-thumb-img" loading="lazy">
                     <div class="item-zoom-badge">🔍</div>
                 </div>
                 <div class="item-details-col">
@@ -332,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
             audioCard.dataset.url = audioProxy || data.audio;
             audioCard.dataset.filename = audioFilename;
 
+            const safeAudioSrc = escapeHtml(audioProxy || data.audio);
             audioCard.innerHTML = `
                 <div class="item-checkbox-col">
                     <input type="checkbox" class="file-checkbox-input" id="chk_audio" checked title="Chọn tệp âm thanh này">
@@ -346,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span>Âm thanh gốc chất lượng cao</span>
                     </div>
                     <div class="audio-player-wrap">
-                        <audio controls class="mini-audio-player" src="${audioProxy || data.audio}" preload="none"></audio>
+                        <audio controls class="mini-audio-player" src="${safeAudioSrc}" preload="none"></audio>
                     </div>
                 </div>
                 <div class="item-actions-col">
@@ -483,7 +497,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Fallback qua proxy PHP lấy stream
                     const isHttp = window.location.protocol.startsWith('http');
                     if (isHttp) {
-                        const proxyUrl = `api.php?action=download&filename=${encodeURIComponent(item.filename)}&url=${encodeURIComponent(item.url)}`;
+                        const proxyUrl = item.url.includes('api.php?action=download')
+                            ? item.url
+                            : `api.php?action=download&filename=${encodeURIComponent(item.filename)}&url=${encodeURIComponent(item.url)}`;
                         const pRes = await fetch(proxyUrl);
                         if (pRes.ok) {
                             const pBlob = await pRes.blob();

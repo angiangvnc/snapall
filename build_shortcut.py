@@ -887,6 +887,7 @@ def generate(source, signed, name):
                 ["shortcuts", "sign", "--mode", "anyone", "--input", source, "--output", signed],
                 check=True
             )
+            os.chmod(signed, 0o644)
             print(f"✅ Signed: {signed} ({os.path.getsize(signed):,} bytes)")
             return True
         except Exception as e:
