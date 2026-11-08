@@ -441,11 +441,61 @@ function fetchCurl($url, $customHeaders = [], $followRedirect = true) {
 if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
     $apiUrl = 'https://www.tikwm.com/api/?hd=1&url=' . urlencode($inputUrl);
     $res = fetchCurl($apiUrl);
+    $item = null;
+    $tiktokErrorReason = '';
 
     if ($res['code'] === 200 && !empty($res['body'])) {
         $data = json_decode($res['body'], true);
         if (isset($data['code']) && $data['code'] === 0 && isset($data['data'])) {
             $item = $data['data'];
+        }
+    }
+
+    // Fallback: Bóc tách trực tiếp từ trang TikTok (__UNIVERSAL_DATA_FOR_REHYDRATION__)
+    // hoặc phát hiện chính xác nếu tài khoản / bài viết đang để chế độ Riêng tư (Private)
+    if (!$item) {
+        $directRes = fetchCurl($inputUrl);
+        if (!empty($directRes['body']) && preg_match('/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>(.*?)<\/script>/s', $directRes['body'], $mRehy)) {
+            $rehy = json_decode($mRehy[1], true);
+            $scope = $rehy['__DEFAULT_SCOPE__'] ?? [];
+            $detail = $scope['webapp.reflow.video.detail'] ?? ($scope['webapp.video-detail'] ?? []);
+            $statusCode = (int) ($detail['statusCode'] ?? 0);
+            $shareUser = $scope['webapp.reflow.global.shareUser']['shareUser'] ?? [];
+            $isPrivateUser = !empty($shareUser['privateAccount']) || !empty($shareUser['secret']);
+            $uName = !empty($shareUser['uniqueId']) ? ('@' . $shareUser['uniqueId']) : '';
+
+            if (!empty($detail['itemInfo']['itemStruct'])) {
+                $st = $detail['itemInfo']['itemStruct'];
+                $imgs = [];
+                if (!empty($st['imagePost']['images']) && is_array($st['imagePost']['images'])) {
+                    foreach ($st['imagePost']['images'] as $im) {
+                        if (!empty($im['imageURL']['urlList'][0])) {
+                            $imgs[] = $im['imageURL']['urlList'][0];
+                        }
+                    }
+                }
+                $playUrl = $st['video']['playAddr'] ?? ($st['video']['downloadAddr'] ?? '');
+                $item = [
+                    'title' => $st['desc'] ?? '',
+                    'author' => [
+                        'nickname' => $st['author']['nickname'] ?? ($shareUser['nickname'] ?? 'TikTok Creator'),
+                        'unique_id' => $st['author']['uniqueId'] ?? ($shareUser['uniqueId'] ?? '')
+                    ],
+                    'images' => $imgs,
+                    'music' => $st['music']['playUrl'] ?? '',
+                    'hdplay' => $playUrl,
+                    'play' => $playUrl,
+                    'wmplay' => $st['video']['downloadAddr'] ?? $playUrl,
+                    'cover' => $st['video']['cover'] ?? (!empty($imgs) ? $imgs[0] : '')
+                ];
+            } elseif (in_array($statusCode, [10222, 10216, 10204], true) || $isPrivateUser) {
+                $tiktokErrorReason = 'Bài đăng này thuộc tài khoản Riêng tư' . ($uName ? " ({$uName})" : '') . ' hoặc đang để chế độ "Chỉ bạn bè / Chỉ mình tôi" nên TikTok chặn tải từ bên ngoài. Vui lòng chuyển tài khoản/bài viết sang Công khai (Mọi người) rồi thử lại!';
+            }
+        }
+    }
+
+    if ($item) {
+        if (true) {
             
             $author = $item['author']['nickname'] ?? ($item['author']['unique_id'] ?? 'TikTok Creator');
             $rawTitle = !empty($item['title']) ? $item['title'] : ('TikTok by ' . $author);
@@ -535,7 +585,7 @@ if (preg_match('/(tiktok\.com|douyin\.com)/i', $inputUrl)) {
 
     sendJsonResponse([
         'status' => 'error',
-        'message' => 'Không thể lấy video TikTok. Vui lòng kiểm tra lại liên kết hoặc thử lại sau.'
+        'message' => $tiktokErrorReason ?: 'Không thể lấy video TikTok. Vui lòng kiểm tra lại liên kết hoặc thử lại sau.'
     ]);
 }
 
